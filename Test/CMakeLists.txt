@@ -87,6 +87,7 @@ set(TEST_NAMES
   GenerateColorTableTest
   ImportAsciDataArrayTest
   MatrixMathTest
+  MoveDataTest
   MoveMultiDataTest
   QuaternionMathTest
   RawBinaryReaderTest
