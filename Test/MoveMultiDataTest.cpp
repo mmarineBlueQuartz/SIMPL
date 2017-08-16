@@ -46,7 +46,7 @@
 namespace
 {
   static const int32_t k_MoveAttributeMatrix = 0;
-  static const int32_t k_MoveMultiDataArray = 1;
+  static const int32_t k_MoveDataArray = 1;
 }
 
 class MoveMultiDataTest
@@ -215,7 +215,7 @@ public:
 
     MoveMultiData::Pointer moveDataPtr = MoveMultiData::New();
     moveDataPtr->setDataContainerArray(dca);
-    moveDataPtr->setWhatToMove(::k_MoveMultiDataArray);
+    moveDataPtr->setWhatToMove(::k_MoveDataArray);
 
     QVector<DataArrayPath> dataArrayPaths;
     dataArrayPaths.push_back(DataArrayPath("DataContainer1", "AttributeMatrix1", "ThisShouldNotExist"));
@@ -294,7 +294,7 @@ public:
 
     MoveMultiData::Pointer moveDataPtr = MoveMultiData::New();
     moveDataPtr->setDataContainerArray(dca);
-    moveDataPtr->setWhatToMove(::k_MoveMultiDataArray);
+    moveDataPtr->setWhatToMove(::k_MoveDataArray);
 
     QVector<DataArrayPath> dataArrayPaths;
     dataArrayPaths.push_back(DataArrayPath("DataContainer1", "AttributeMatrix2", "DataArray3"));
