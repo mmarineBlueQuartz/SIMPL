@@ -74,6 +74,7 @@ set(TEST_NAMES
   CreateDataArrayTest
   CreateFeatureArrayFromElementArrayTest
   CreateImageGeometryTest
+  CreateStringArrayTest
   DataArrayTest
   DataContainerBundleTest
   DataContainerTest

@@ -54,10 +54,6 @@ class SIMPLib_EXPORT CreateStringArray : public AbstractFilter
 
     virtual ~CreateStringArray();
 
-
-    SIMPL_FILTER_PARAMETER(int, NumberOfComponents)
-    Q_PROPERTY(int NumberOfComponents READ getNumberOfComponents WRITE setNumberOfComponents)
-
     SIMPL_FILTER_PARAMETER(DataArrayPath, NewArray)
     Q_PROPERTY(DataArrayPath NewArray READ getNewArray WRITE setNewArray)
 

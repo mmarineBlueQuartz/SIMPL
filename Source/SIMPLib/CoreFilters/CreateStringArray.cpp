@@ -78,7 +78,6 @@ void initializeArray(IDataArray::Pointer outputArrayPtr, const QString& initiali
 // -----------------------------------------------------------------------------
 CreateStringArray::CreateStringArray()
 : AbstractFilter()
-, m_NumberOfComponents(0)
 , m_NewArray("", "", "")
 , m_InitializationValue("Text")
 {
@@ -99,9 +98,6 @@ void CreateStringArray::setupFilterParameters()
 {
   FilterParameterVector parameters;
 
-  // Do not let the user change the number of components in a StringDataArray
-  setNumberOfComponents(1);
-
   parameters.push_back(SIMPL_NEW_STRING_FP("Initialization Value", InitializationValue, FilterParameter::Parameter, CreateStringArray));
   {
     DataArrayCreationFilterParameter::RequirementType req;
@@ -117,7 +113,6 @@ void CreateStringArray::setupFilterParameters()
 void CreateStringArray::readFilterParameters(AbstractFilterParametersReader* reader, int index)
 {
   reader->openFilterGroup(this, index);
-  setNumberOfComponents(reader->readValue("NumberOfComponents", getNumberOfComponents()));
   setNewArray(reader->readDataArrayPath("NewArray", getNewArray()));
   setInitializationValue(reader->readString("InitializationValue", getInitializationValue()));
   reader->closeFilterGroup();
@@ -143,18 +138,6 @@ void CreateStringArray::dataCheck()
     return;
   }
 
-  if(getNumberOfComponents() < 0)
-  {
-    setErrorCondition(-8150);
-    QString ss = QObject::tr("The number of components must non-negative");
-    notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
-  }
-  if(getNumberOfComponents() == 0)
-  {
-    setErrorCondition(-8151);
-    QString ss = QObject::tr("The number of components is Zero. This will result in an array that has no memory allocated. Are you sure you wanted to do this?");
-    notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
-  }
   if(!getNewArray().isValid())
   {
     setErrorCondition(-8152);
@@ -167,7 +150,7 @@ void CreateStringArray::dataCheck()
     setErrorCondition(-5759);
     notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
   }
-  QVector<size_t> cDims(1, getNumberOfComponents());
+  QVector<size_t> cDims(1, 1);
   if(getErrorCondition() < 0)
   {
     return;
