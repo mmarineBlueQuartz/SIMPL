@@ -139,7 +139,28 @@ void CopyFeatureArrayToElementArray::dataCheck()
       getDataContainerArray()->getPrereqIDataArrayFromPath<IDataArray, AbstractFilter>(this, getSelectedFeatureArrayPath()); /* Assigns the shared_ptr<> to an instance variable that is a weak_ptr<> */
 
   DataArrayPath tempPath(getFeatureIdsArrayPath().getDataContainerName(), getFeatureIdsArrayPath().getAttributeMatrixName(), "");
-  getDataContainerArray()->getPrereqAttributeMatrixFromPath<AbstractFilter>(this, tempPath, -301);
+  AttributeMatrix::Pointer featureIdsMatrix = getDataContainerArray()->getPrereqAttributeMatrixFromPath<AbstractFilter>(this, tempPath, -301);
+
+  // Check FeatureIds matrix type
+  if(false == featureIdsMatrix->isCategory(AttributeMatrix::Category::Element))
+  {
+    setErrorCondition(-11003);
+    QString ss = QString("The given AttributeMatrix for FeatureIdsArrayPath is not of the correct category.  It should be of category 'Element' but is of type %1")
+      .arg(AttributeMatrix::TypeToString(featureIdsMatrix->getType()));
+    notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
+  }
+
+  tempPath.setAttributeMatrixName(getSelectedFeatureArrayPath().getAttributeMatrixName());
+  AttributeMatrix::Pointer selectedFeatureMatrix = getDataContainerArray()->getPrereqAttributeMatrixFromPath<AbstractFilter>(this, tempPath, -302);
+
+  // Check SelectedFeature matrix type
+  if(false == selectedFeatureMatrix->isCategory(AttributeMatrix::Category::Feature))
+  {
+    setErrorCondition(-11004);
+    QString ss = QString("The given AttributeMatrix for SelectedFeatureArray is not of the correct category.  It should be of category 'Feature' but is of type %1")
+      .arg(AttributeMatrix::TypeToString(selectedFeatureMatrix->getType()));
+    notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
+  }
 
   if(getErrorCondition() < 0)
   {

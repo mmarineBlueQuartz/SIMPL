@@ -69,6 +69,7 @@ set(TEST_NAMES
   CombineAttributeMatricesTest
   ConditionalSetValueTest
   ConvertDataTest
+  CopyFeatureArrayToElementArrayTest
   CreateDataContainerTest
   CreateAttributeMatrixTest
   CreateDataArrayTest

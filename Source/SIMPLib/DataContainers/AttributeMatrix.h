@@ -188,6 +188,26 @@ class SIMPLib_EXPORT AttributeMatrix : public Observable
     static void ReadAttributeMatrixStructure(hid_t containerId, DataContainerProxy* dcProxy, QString h5InternalPath);
 
     /**
+     * @brief GetCategoryTypes returns AttributeMatrix::Types of the Type that fit the given category
+     * @param Category
+     * @return AttributeMatrix::Types that fit the given Category
+     */
+    static Types GetCategoryTypes(Category category);
+
+    /**
+     * @brief isCategory
+     * @param Category
+     * @return
+     */
+    bool isCategory(Category category);
+
+    /**
+     * @brief getCategory
+     * @return
+     */
+    Category getCategory();
+
+    /**
      * @brief setType
      * @param value
      */
@@ -198,7 +218,6 @@ class SIMPLib_EXPORT AttributeMatrix : public Observable
      * @return
      */
     AttributeMatrix::Type getType() const;
-
 
     /**
     * @param name

@@ -276,6 +276,83 @@ void AttributeMatrix::ReadAttributeMatrixStructure(hid_t containerId, DataContai
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+AttributeMatrix::Types AttributeMatrix::GetCategoryTypes(Category attributeMatrixCategory)
+{
+  AttributeMatrix::Types amTypes;
+  if(attributeMatrixCategory == AttributeMatrix::Category::Element)
+  {
+    amTypes.push_back(AttributeMatrix::Type::Cell);
+    amTypes.push_back(AttributeMatrix::Type::Face);
+    amTypes.push_back(AttributeMatrix::Type::Edge);
+    amTypes.push_back(AttributeMatrix::Type::Vertex);
+  }
+  else if(attributeMatrixCategory == AttributeMatrix::Category::Feature)
+  {
+    amTypes.push_back(AttributeMatrix::Type::CellFeature);
+    amTypes.push_back(AttributeMatrix::Type::FaceFeature);
+    amTypes.push_back(AttributeMatrix::Type::EdgeFeature);
+    amTypes.push_back(AttributeMatrix::Type::VertexFeature);
+  }
+  else if(attributeMatrixCategory == AttributeMatrix::Category::Ensemble)
+  {
+    amTypes.push_back(AttributeMatrix::Type::CellEnsemble);
+    amTypes.push_back(AttributeMatrix::Type::FaceEnsemble);
+    amTypes.push_back(AttributeMatrix::Type::EdgeEnsemble);
+    amTypes.push_back(AttributeMatrix::Type::VertexEnsemble);
+  }
+
+  return amTypes;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+AttributeMatrix::Category AttributeMatrix::getCategory()
+{
+  if(m_Type == AttributeMatrix::Type::Cell
+    || m_Type == AttributeMatrix::Type::Face
+    || m_Type == AttributeMatrix::Type::Edge
+    || m_Type == AttributeMatrix::Type::Vertex)
+  {
+    return AttributeMatrix::Category::Element;
+  }
+  else if(m_Type == AttributeMatrix::Type::CellFeature
+    || m_Type == AttributeMatrix::Type::FaceFeature
+    || m_Type == AttributeMatrix::Type::EdgeFeature
+    || m_Type == AttributeMatrix::Type::VertexFeature)
+  {
+    return AttributeMatrix::Category::Feature;
+  }
+  else if(m_Type == AttributeMatrix::Type::CellEnsemble
+    || m_Type == AttributeMatrix::Type::FaceEnsemble
+    || m_Type == AttributeMatrix::Type::EdgeEnsemble
+    || m_Type == AttributeMatrix::Type::VertexEnsemble)
+  {
+    return AttributeMatrix::Category::Ensemble;
+  }
+  else if(m_Type == AttributeMatrix::Type::MetaData
+    || m_Type == AttributeMatrix::Type::Generic
+    || m_Type == AttributeMatrix::Type::Any)
+  {
+    return AttributeMatrix::Category::Any;
+  }
+  else
+  {
+    return AttributeMatrix::Category::Unknown;
+  }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool AttributeMatrix::isCategory(Category category)
+{
+  return getCategory() == category;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 void AttributeMatrix::setType(AttributeMatrix::Type value)
 {
   m_Type = value;
