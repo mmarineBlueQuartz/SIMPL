@@ -88,6 +88,7 @@ set(TEST_NAMES
   FloatSummationTest
   GenerateColorTableTest
   ImportAsciDataArrayTest
+  LinkFeatureMapToElementArrayTest
   MatrixMathTest
   MoveDataTest
   MoveMultiDataTest
