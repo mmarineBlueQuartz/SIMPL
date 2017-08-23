@@ -110,6 +110,7 @@ set(TEST_NAMES
   StringDataArrayTest
   StructArrayTest
   WriteASCIIDataTest
+  WriteTriangleGeometryTest
 )
 
 
