@@ -60,14 +60,8 @@ public:
     NO_ERROR = 0
   };
 
-  // -----------------------------------------------------------------------------
-  //
-  // -----------------------------------------------------------------------------
-  QString getOutputPath()
-  {
-    return UnitTest::TestTempDir + "FeatureDataCSVWriter / FeatureData.csv";
-  }
-
+  const QString OUTPUT_PATH = UnitTest::TestTempDir + "/FeatureDataCSVWriter/FeatureData.csv";
+  
   // -----------------------------------------------------------------------------
   //
   // -----------------------------------------------------------------------------
@@ -181,7 +175,7 @@ public:
     bool writeNeighborListData = true;
     int delimiterChoice = 0;
     bool writeNumFeaturesLine = true;
-    AbstractFilter::Pointer filter = CreateFilter(featureMatrixPath, getOutputPath(), writeNeighborListData, delimiterChoice, writeNumFeaturesLine);
+    AbstractFilter::Pointer filter = CreateFilter(featureMatrixPath, OUTPUT_PATH, writeNeighborListData, delimiterChoice, writeNumFeaturesLine);
 
     // Valid Input
     filter->execute();
@@ -201,7 +195,7 @@ public:
     DataArray<int32_t>::Pointer feature2 = am->getAttributeArrayAs<DataArray<int32_t>>("Feature2");
 
     // File
-    QFile file(getOutputPath());
+    QFile file(OUTPUT_PATH);
     DREAM3D_REQUIRE(file.exists());
 
     if(!file.open(QIODevice::ReadOnly))
