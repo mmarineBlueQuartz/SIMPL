@@ -82,6 +82,7 @@ set(TEST_NAMES
   ErrorMessageTest
   ExecuteProcessTest
   ExtractComponentAsArrayTest
+  FeatureDataCSVWriterTest
   FilterParametersRWTest
   FilterPipelineTest
   FindDerivativesFilterTest
