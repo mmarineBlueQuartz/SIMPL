@@ -261,8 +261,6 @@ class SVWidgetsLib_EXPORT SVPipelineViewWidget : public QFrame, public PipelineV
      */
     virtual DataStructureWidget* getDataStructureWidget();
 
-    virtual QAction* getActionEnableFilter();
-
   public slots:
 
     /**
@@ -456,7 +454,6 @@ class SVWidgetsLib_EXPORT SVPipelineViewWidget : public QFrame, public PipelineV
     std::stack<bool>                                  m_BlockPreflightStack;
     DataStructureWidget*                              m_DataStructureWidget = nullptr;
     bool                                              m_LoadingJson = false;
-    QAction*                                          m_ActionEnableFilter = nullptr;
 
     /**
      * @brief addFilterObject

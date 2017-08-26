@@ -135,11 +135,6 @@ void SVPipelineViewWidget::setupGui()
   newEmptyPipelineViewLayout();
   connect(&m_autoScrollTimer, SIGNAL(timeout()), this, SLOT(doAutoScroll()));
 
-  m_ActionEnableFilter = new QAction("Enable", this);
-  m_ActionEnableFilter->setCheckable(true);
-  m_ActionEnableFilter->setChecked(true);
-  m_ActionEnableFilter->setEnabled(false);
-
   // connect(this, SIGNAL(deleteKeyPressed(PipelineView*)), dream3dApp, SLOT(on_pipelineViewWidget_deleteKeyPressed(PipelineView*)));
   m_UndoStack = QSharedPointer<QUndoStack>(new QUndoStack(this));
   m_UndoStack->setUndoLimit(10);
@@ -192,21 +187,15 @@ PipelineFilterObject* SVPipelineViewWidget::createFilterObjectFromFilter(Abstrac
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-QAction* SVPipelineViewWidget::getActionEnableFilter()
-{
-  return m_ActionEnableFilter;
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
 void SVPipelineViewWidget::updateActionEnableFilter()
 {
   QList<PipelineFilterObject*> selectedObjs = getSelectedFilterObjects();
-
+  SIMPLViewMenuItems* menuItems = SIMPLViewMenuItems::Instance();
+  
+  QAction* actionEnableFilter = menuItems->getActionEnableFilter();
   // Set Enabled / Disabled
-  disconnect(m_ActionEnableFilter, &QAction::toggled, 0, 0);
-  m_ActionEnableFilter->setEnabled(selectedObjs.size());
+  disconnect(actionEnableFilter, &QAction::toggled, 0, 0);
+  actionEnableFilter->setEnabled(selectedObjs.size());
 
   // Set checked state
   int count = selectedObjs.size();
@@ -218,9 +207,9 @@ void SVPipelineViewWidget::updateActionEnableFilter()
 
   // Lambda connections don't allow Qt::UniqueConnection
   // Also, this needs to be disconnected before changing the checked state
-  m_ActionEnableFilter->setChecked(widgetEnabled);
+  actionEnableFilter->setChecked(widgetEnabled);
 
-  connect(m_ActionEnableFilter, &QAction::toggled, [=] { setSelectedFiltersEnabled(m_ActionEnableFilter->isChecked()); });
+  connect(actionEnableFilter, &QAction::toggled, [=] { setSelectedFiltersEnabled(actionEnableFilter->isChecked()); });
 }
 
 // -----------------------------------------------------------------------------
@@ -230,8 +219,10 @@ QMenu* SVPipelineViewWidget::createPipelineFilterWidgetMenu(SVPipelineFilterWidg
 {
   // Creating Pipeline Filter Widget Menu
   SIMPLViewMenuItems* menuItems = SIMPLViewMenuItems::Instance();
+  QAction* actionEnableFilter = menuItems->getActionEnableFilter();
 
   QList<PipelineFilterObject*> selectedObjs = getSelectedFilterObjects();
+  qDebug() << selectedObjs.size();
 
   QMenu* contextMenu = new QMenu(this);
 
@@ -247,13 +238,12 @@ QMenu* SVPipelineViewWidget::createPipelineFilterWidgetMenu(SVPipelineFilterWidg
     widgetEnabled = selectedObjs[i]->getFilter()->getEnabled();
   }
 
-  if(selectedObjs.contains(filterWidget) == false)
+  if(selectedObjs.contains(filterWidget) == false || selectedObjs.size() == 1)
   {
     // Only toggle the target filter widget if it is not in the selected objects
     QList<PipelineFilterObject*> toggledObjects = QList<PipelineFilterObject*>();
     toggledObjects.push_back(filterWidget);
-
-    QAction* actionEnableFilter = new QAction("Enable", this);
+    actionEnableFilter->setText(tr("Enable Filter"));
     actionEnableFilter->setCheckable(true);
 
     widgetEnabled = filterWidget->getFilter()->getEnabled();
@@ -264,11 +254,13 @@ QMenu* SVPipelineViewWidget::createPipelineFilterWidgetMenu(SVPipelineFilterWidg
   }
   else
   {
-    disconnect(m_ActionEnableFilter, &QAction::toggled, 0, 0);
-    m_ActionEnableFilter->setChecked(widgetEnabled);
+    actionEnableFilter->setText(tr("Enable %1 Filters").arg(selectedObjs.size()));
 
-    connect(m_ActionEnableFilter, &QAction::toggled, [=] { setSelectedFiltersEnabled(m_ActionEnableFilter->isChecked()); });
-    contextMenu->addAction(m_ActionEnableFilter);
+    disconnect(actionEnableFilter, &QAction::toggled, 0, 0);
+    actionEnableFilter->setChecked(widgetEnabled);
+
+    connect(actionEnableFilter, &QAction::toggled, [=] { setSelectedFiltersEnabled(actionEnableFilter->isChecked()); });
+    contextMenu->addAction(actionEnableFilter);
   }
 
   contextMenu->addSeparator();

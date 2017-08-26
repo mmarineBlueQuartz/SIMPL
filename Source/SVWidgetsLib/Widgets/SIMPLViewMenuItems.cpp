@@ -80,6 +80,7 @@ SIMPLViewMenuItems::~SIMPLViewMenuItems()
   delete m_ActionCut;
   delete m_ActionCopy;
   delete m_ActionPaste;
+  delete m_ActionEnableFilter;
 
   // View Menu
   delete m_ActionShowFilterLibrary;
@@ -164,9 +165,16 @@ void SIMPLViewMenuItems::createActions()
   m_ActionShowToolbox->setCheckable(true);
   m_ActionAddBookmark = new QAction("Add Bookmark", this);
   m_ActionNewFolder = new QAction("New Folder", this);
+  
+  //---- Edit Menu
   m_ActionCut = new QAction("Cut", this);
   m_ActionCopy = new QAction("Copy", this);
   m_ActionPaste = new QAction("Paste", this);
+  m_ActionEnableFilter = new QAction("Enable Filter", this);
+  m_ActionEnableFilter->setCheckable(true);
+  m_ActionEnableFilter->setChecked(true);
+  m_ActionEnableFilter->setEnabled(false);    
+
   m_ActionLoadTheme = new QAction("Load Theme", this);
   m_ActionSaveTheme = new QAction("Save Theme", this);
   m_ActionLocateFile = new QAction("Locate File", this);
