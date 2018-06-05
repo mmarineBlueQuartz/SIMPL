@@ -165,23 +165,19 @@ const QColor DataArrayPathSelectionWidget::GetCheckedColor(DataArrayPath::DataTy
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-bool DataArrayPathSelectionWidget::CheckPathRequirements(AbstractFilter* filter, DataArrayPath path, DataContainerSelectionFilterParameter::RequirementType reqs)
+bool DataArrayPathSelectionWidget::CheckPathRequirements(DataContainerArray::Pointer dca, DataArrayPath path, DataContainerSelectionFilterParameter::RequirementType reqs)
 {
   if(DataArrayPath::DataType::DataContainer != path.getDataType())
   {
     return false;
   }
-  if(nullptr == filter)
+  if(nullptr == dca)
   {
     return false;
   }
-  if(nullptr == filter->getDataContainerArray())
-  {
-    return false;
-  }
-
+  
   // Check that the DataContainer exists
-  DataContainer::Pointer dc = filter->getDataContainerArray()->getDataContainer(path);
+  DataContainer::Pointer dc = dca->getDataContainer(path);
   if(nullptr == dc)
   {
     return false;
@@ -211,23 +207,19 @@ bool DataArrayPathSelectionWidget::CheckPathRequirements(AbstractFilter* filter,
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-bool DataArrayPathSelectionWidget::CheckPathRequirements(AbstractFilter* filter, DataArrayPath path, AttributeMatrixSelectionFilterParameter::RequirementType reqs)
+bool DataArrayPathSelectionWidget::CheckPathRequirements(DataContainerArray::Pointer dca, DataArrayPath path, AttributeMatrixSelectionFilterParameter::RequirementType reqs)
 {
   if(DataArrayPath::DataType::AttributeMatrix != path.getDataType())
   {
     return false;
   }
-  if(nullptr == filter)
-  {
-    return false;
-  }
-  if(nullptr == filter->getDataContainerArray())
+  if(nullptr == dca)
   {
     return false;
   }
 
   // Check that the DataContainer exists
-  DataContainer::Pointer dc = filter->getDataContainerArray()->getDataContainer(path);
+  DataContainer::Pointer dc = dca->getDataContainer(path);
   if(nullptr == dc)
   {
     return false;
@@ -272,23 +264,19 @@ bool DataArrayPathSelectionWidget::CheckPathRequirements(AbstractFilter* filter,
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-bool DataArrayPathSelectionWidget::CheckPathRequirements(AbstractFilter* filter, DataArrayPath path, DataArraySelectionFilterParameter::RequirementType reqs)
+bool DataArrayPathSelectionWidget::CheckPathRequirements(DataContainerArray::Pointer dca, DataArrayPath path, DataArraySelectionFilterParameter::RequirementType reqs)
 {
   if(DataArrayPath::DataType::DataArray != path.getDataType())
   {
     return false;
   }
-  if(nullptr == filter)
-  {
-    return false;
-  }
-  if(nullptr == filter->getDataContainerArray())
+  if(nullptr == dca)
   {
     return false;
   }
 
   // Check that the DataContainer exists
-  DataContainer::Pointer dc = filter->getDataContainerArray()->getDataContainer(path);
+  DataContainer::Pointer dc = dca->getDataContainer(path);
   if(nullptr == dc)
   {
     return false;
@@ -345,6 +333,69 @@ bool DataArrayPathSelectionWidget::CheckPathRequirements(AbstractFilter* filter,
   }
 
   return true;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool DataArrayPathSelectionWidget::CheckPathRequirements(AbstractFilter* filter, DataArrayPath path, DataContainerSelectionFilterParameter::RequirementType reqs)
+{
+  if(DataArrayPath::DataType::DataContainer != path.getDataType())
+  {
+    return false;
+  }
+  if(nullptr == filter)
+  {
+    return false;
+  }
+  if(nullptr == filter->getDataContainerArray())
+  {
+    return false;
+  }
+
+  return CheckPathRequirements(filter->getDataContainerArray(), path, reqs);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool DataArrayPathSelectionWidget::CheckPathRequirements(AbstractFilter* filter, DataArrayPath path, AttributeMatrixSelectionFilterParameter::RequirementType reqs)
+{
+  if(DataArrayPath::DataType::AttributeMatrix != path.getDataType())
+  {
+    return false;
+  }
+  if(nullptr == filter)
+  {
+    return false;
+  }
+  if(nullptr == filter->getDataContainerArray())
+  {
+    return false;
+  }
+
+  return CheckPathRequirements(filter->getDataContainerArray(), path, reqs);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool DataArrayPathSelectionWidget::CheckPathRequirements(AbstractFilter* filter, DataArrayPath path, DataArraySelectionFilterParameter::RequirementType reqs)
+{
+  if(DataArrayPath::DataType::DataArray != path.getDataType())
+  {
+    return false;
+  }
+  if(nullptr == filter)
+  {
+    return false;
+  }
+  if(nullptr == filter->getDataContainerArray())
+  {
+    return false;
+  }
+
+  return CheckPathRequirements(filter->getDataContainerArray(), path, reqs);
 }
 
 // -----------------------------------------------------------------------------
@@ -744,10 +795,13 @@ bool DataArrayPathSelectionWidget::checkCurrentPath()
 bool DataArrayPathSelectionWidget::checkPathReqs(DataArrayPath path)
 {
   // Do not allow DataArrayPaths created by the current filter to be used as inputs for that same filter.
-  std::list<DataArrayPath> createdPaths = m_Filter->getCreatedPaths();
-  if(std::find(createdPaths.begin(), createdPaths.end(), path) != createdPaths.end())
+  if(m_Filter)
   {
-    return false;
+    std::list<DataArrayPath> createdPaths = m_Filter->getCreatedPaths();
+    if(std::find(createdPaths.begin(), createdPaths.end(), path) != createdPaths.end())
+    {
+      return false;
+    }
   }
 
   // Check requirements
@@ -771,7 +825,7 @@ bool DataArrayPathSelectionWidget::checkPathReqs(DataArrayPath path)
 // -----------------------------------------------------------------------------
 bool DataArrayPathSelectionWidget::checkDataContainerReqs(DataArrayPath path)
 {
-  return CheckPathRequirements(m_Filter, path, m_DataContainerReqs);
+  return CheckPathRequirements(getDataContainerArray(), path, m_DataContainerReqs);
 }
 
 // -----------------------------------------------------------------------------
@@ -779,7 +833,7 @@ bool DataArrayPathSelectionWidget::checkDataContainerReqs(DataArrayPath path)
 // -----------------------------------------------------------------------------
 bool DataArrayPathSelectionWidget::checkAttributeMatrixReqs(DataArrayPath path)
 {
-  return CheckPathRequirements(m_Filter, path, m_AttrMatrixReqs);
+  return CheckPathRequirements(getDataContainerArray(), path, m_AttrMatrixReqs);
 }
 
 // -----------------------------------------------------------------------------
@@ -787,7 +841,7 @@ bool DataArrayPathSelectionWidget::checkAttributeMatrixReqs(DataArrayPath path)
 // -----------------------------------------------------------------------------
 bool DataArrayPathSelectionWidget::checkDataArrayReqs(DataArrayPath path)
 {
-  return CheckPathRequirements(m_Filter, path, m_DataArrayReqs);
+  return CheckPathRequirements(getDataContainerArray(), path, m_DataArrayReqs);
 }
 
 // -----------------------------------------------------------------------------
@@ -995,6 +1049,29 @@ void DataArrayPathSelectionWidget::performDrag()
 void DataArrayPathSelectionWidget::setFilter(AbstractFilter* filter)
 {
   m_Filter = filter;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void DataArrayPathSelectionWidget::setDataContainerArray(DataContainerArray::Pointer dca)
+{
+  m_Dca = dca;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+DataContainerArray::Pointer DataArrayPathSelectionWidget::getDataContainerArray()
+{
+  if(m_Filter)
+  {
+    return m_Filter->getDataContainerArray();
+  }
+  else
+  {
+    return m_Dca;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -1328,8 +1405,13 @@ void DataArrayPathSelectionWidget::setPropertyName(QString propName)
 // -----------------------------------------------------------------------------
 bool DataArrayPathSelectionWidget::isCreatedPath(DataArrayPath path)
 {
-  std::list<DataArrayPath> createdPaths = m_Filter->getCreatedPaths();
-  return std::find(createdPaths.begin(), createdPaths.end(), path) != createdPaths.end();
+  if(m_Filter)
+  {
+    std::list<DataArrayPath> createdPaths = m_Filter->getCreatedPaths();
+    return std::find(createdPaths.begin(), createdPaths.end(), path) != createdPaths.end();
+  }
+
+  return false;
 }
 
 // -----------------------------------------------------------------------------
@@ -1356,12 +1438,12 @@ void DataArrayPathSelectionWidget::showContextMenu(const QPoint& pos)
 // -----------------------------------------------------------------------------
 QMenu* DataArrayPathSelectionWidget::createSelectionMenu()
 {
-  if(nullptr == m_Filter || DataArrayPath::DataType::None == m_DataType)
+  if(nullptr == getDataContainerArray() || DataArrayPath::DataType::None == m_DataType)
   {
     return nullptr;
   }
 
-  DataContainerArray::Pointer dca = m_Filter->getDataContainerArray();
+  DataContainerArray::Pointer dca = getDataContainerArray();
   if(nullptr == dca.get())
   {
     return nullptr;

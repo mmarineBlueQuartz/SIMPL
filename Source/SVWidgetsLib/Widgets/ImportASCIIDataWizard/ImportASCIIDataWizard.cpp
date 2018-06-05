@@ -523,3 +523,15 @@ void ImportASCIIDataWizard::updateDataArrayPath(DataArrayPath::RenameType rename
     dfPage->updateDataArrayPath(renamePath);
   }
 }
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void ImportASCIIDataWizard::setDataContainerArray(DataContainerArray::Pointer dca)
+{
+  DataFormatPage* dfPage = dynamic_cast<DataFormatPage*>(page(DataFormat));
+  if(NULL != dfPage)
+  {
+    dfPage->setDataContainerArray(dca);
+  }
+}

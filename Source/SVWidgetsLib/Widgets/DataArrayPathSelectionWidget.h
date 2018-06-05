@@ -78,6 +78,9 @@ public:
   static bool CheckPathRequirements(AbstractFilter* filter, DataArrayPath path, DataContainerSelectionFilterParameter::RequirementType reqs);
   static bool CheckPathRequirements(AbstractFilter* filter, DataArrayPath path, AttributeMatrixSelectionFilterParameter::RequirementType reqs);
   static bool CheckPathRequirements(AbstractFilter* filter, DataArrayPath path, DataArraySelectionFilterParameter::RequirementType reqs);
+  static bool CheckPathRequirements(DataContainerArray::Pointer dca, DataArrayPath path, DataContainerSelectionFilterParameter::RequirementType reqs);
+  static bool CheckPathRequirements(DataContainerArray::Pointer dca, DataArrayPath path, AttributeMatrixSelectionFilterParameter::RequirementType reqs);
+  static bool CheckPathRequirements(DataContainerArray::Pointer dca, DataArrayPath path, DataArraySelectionFilterParameter::RequirementType reqs);
 
   DataArrayPathSelectionWidget(QWidget* parent = nullptr);
   virtual ~DataArrayPathSelectionWidget() = default;
@@ -173,6 +176,13 @@ public:
   void setFilter(AbstractFilter* filter);
 
   /**
+   * @brief Sets the DataContainerArray to use for the selection widget.
+   * This is overridden by any stored filters.
+   * @param dca
+   */
+  void setDataContainerArray(DataContainerArray::Pointer dca);
+
+  /**
    * @brief Handles operations performed before Preflight()
    */
   void beforePreflight();
@@ -263,6 +273,12 @@ protected:
   * @param styleType
   */
   void setState(State styleType);
+
+  /**
+   * @brief Returns the DataContainerArray to use
+   * @return
+   */
+  DataContainerArray::Pointer getDataContainerArray();
 
   /**
    * @brief Returns the X margin
@@ -419,6 +435,7 @@ private:
   DataArrayPath::DataType m_DataType = DataArrayPath::DataType::None;
   State m_State = State::Normal;
   AbstractFilter* m_Filter = nullptr;
+  DataContainerArray::Pointer m_Dca = nullptr;
   DataContainerSelectionFilterParameter::RequirementType m_DataContainerReqs;
   AttributeMatrixSelectionFilterParameter::RequirementType m_AttrMatrixReqs;
   DataArraySelectionFilterParameter::RequirementType m_DataArrayReqs;

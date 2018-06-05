@@ -481,6 +481,7 @@ void ReadASCIIDataWidget::beforePreflight()
 // -----------------------------------------------------------------------------
 void ReadASCIIDataWidget::afterPreflight()
 {
+  m_ImportWizard->setDataContainerArray(getFilter()->getDataContainerArray());
 }
 
 // -----------------------------------------------------------------------------

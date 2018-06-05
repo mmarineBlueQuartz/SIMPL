@@ -42,6 +42,8 @@
 
 #include "SIMPLib/DataContainers/DataContainerArray.h"
 
+#include "SVWidgetsLib/Widgets/DataArrayPathSelectionWidget.h"
+
 #include "AbstractWizardPage.h"
 
 #include "ui_DataFormatPage.h"
@@ -200,6 +202,12 @@ class DataFormatPage : public AbstractWizardPage, private Ui::DataFormatPage
     */
     void updateDataArrayPath(DataArrayPath::RenameType renamePath);
 
+    /**
+    * @brief Sets the DataContainerArray
+    * @param dca
+    */
+    void setDataContainerArray(DataContainerArray::Pointer dca);
+
   public slots:
     /**
      * @brief dcaItemSelected
@@ -246,10 +254,7 @@ class DataFormatPage : public AbstractWizardPage, private Ui::DataFormatPage
      * @param pushButton
      * @return
      */
-    QPoint adjustedMenuPosition(QPushButton* pushButton);
-
-    void createDCSelectionMenu();
-    void createAMSelectionMenu();
+    QPoint adjustedMenuPosition(DataArrayPathSelectionWidget* pushButton);
 
 
   private slots:
@@ -277,17 +282,15 @@ class DataFormatPage : public AbstractWizardPage, private Ui::DataFormatPage
     EditHeadersDialog*                              m_EditHeadersDialog = nullptr;
     DataContainerArray::Pointer                     m_Dca;
     QSharedPointer<ASCIIDataModel> m_ASCIIDataModel;
-    QSignalMapper*                                  m_AMMenuMapper = nullptr;
-    QSignalMapper*                                  m_DCMenuMapper = nullptr;
 
     QPointer<QtSFaderWidget>                        m_FaderWidget;
     bool                                            m_EditSettings = false;
 
-    QMenu*                                          m_DCMenuPtr = nullptr;
-    bool                                            m_OwnsDCMenuPtr = false;
+    //QMenu*                                          m_DCMenuPtr = nullptr;
+    //bool                                            m_OwnsDCMenuPtr = false;
 
-    QMenu*                                          m_AttrMatMenuPtr = nullptr;
-    bool                                            m_OwnsAttrMatMenuPtr = false;
+    //QMenu*                                          m_AttrMatMenuPtr = nullptr;
+    //bool                                            m_OwnsAttrMatMenuPtr = false;
 
     bool                                            m_TupleDimsHasErrors = false;
     bool                                            m_HeadersHasErrors = false;

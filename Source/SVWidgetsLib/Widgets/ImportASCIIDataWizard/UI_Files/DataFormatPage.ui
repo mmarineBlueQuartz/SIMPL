@@ -498,12 +498,18 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="selectedDCBtn">
+             <widget class="DataArrayPathSelectionWidget" name="selectedDCBtn">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>75</width>
+                <height>22</height>
+               </size>
               </property>
               <property name="maximumSize">
                <size>
@@ -527,9 +533,6 @@
               </property>
               <property name="shortcut">
                <string>Ctrl+S</string>
-              </property>
-              <property name="flat">
-               <bool>false</bool>
               </property>
              </widget>
             </item>
@@ -629,12 +632,18 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="selectedAMBtn">
+             <widget class="DataArrayPathSelectionWidget" name="selectedAMBtn">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>22</height>
+               </size>
               </property>
               <property name="maximumSize">
                <size>
@@ -658,9 +667,6 @@
               </property>
               <property name="shortcut">
                <string>Ctrl+S</string>
-              </property>
-              <property name="flat">
-               <bool>false</bool>
               </property>
              </widget>
             </item>
@@ -814,6 +820,11 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>DataArrayPathSelectionWidget</class>
+   <extends>QToolButton</extends>
+   <header>DataArrayPathSelectionWidget.h</header>
+  </customwidget>
+  <customwidget>
    <class>TupleTableWidget</class>
    <extends>QWidget</extends>
    <header location="global">TupleTableWidget.h</header>
@@ -839,22 +850,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>useAMRadio</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>selectedAMBtn</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>622</x>
-     <y>58</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>373</x>
-     <y>96</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>createAMRadio</sender>
    <signal>toggled(bool)</signal>
    <receiver>label_4</receiver>
@@ -867,22 +862,6 @@
     <hint type="destinationlabel">
      <x>60</x>
      <y>149</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>createAMRadio</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>selectedDCBtn</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>78</x>
-     <y>58</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>182</x>
-     <y>156</y>
     </hint>
    </hints>
   </connection>

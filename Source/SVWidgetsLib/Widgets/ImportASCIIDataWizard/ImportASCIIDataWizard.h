@@ -146,6 +146,12 @@ class ImportASCIIDataWizard : public QWizard
 
     void setEditSettings(bool value);
 
+    /**
+     * @brief Sets the DataContainerArray for the wizard
+     * @param dca
+     */
+    void setDataContainerArray(DataContainerArray::Pointer dca);
+
   protected slots:
     void refreshModel();
     void cleanupPage(int id);

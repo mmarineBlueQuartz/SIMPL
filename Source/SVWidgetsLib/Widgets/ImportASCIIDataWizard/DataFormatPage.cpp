@@ -119,17 +119,6 @@ void DataFormatPage::setupGui()
   tupleDimsTable->addTupleDimensions(QVector<size_t>(1, numOfDataLines));
   tupleDimsTable->blockSignals(false);
 
-  selectedDCBtn->setStyleSheet(SVStyle::Instance()->QToolSelectionButtonStyle(false));
-  selectedAMBtn->setStyleSheet(SVStyle::Instance()->QToolSelectionButtonStyle(false));
-
-  m_AMMenuMapper = new QSignalMapper(this);
-  connect(m_AMMenuMapper, SIGNAL(mapped(QString)),
-            this, SLOT(amItemSelected(QString)));
-
-  m_DCMenuMapper = new QSignalMapper(this);
-  connect(m_DCMenuMapper, SIGNAL(mapped(QString)),
-            this, SLOT(dcItemSelected(QString)));
-
   editHeadersBtn->setDisabled(true);
   columnDataGroupBox->setDisabled(true);
 
@@ -151,9 +140,13 @@ void DataFormatPage::setupGui()
   attributeMatrixType->setCurrentIndex(3);
   amName->setText("CellData");
 
-  createDCSelectionMenu();
-  createAMSelectionMenu();
+  selectedDCBtn->setDataContainerRequirements(DataContainerSelectionFilterParameter::RequirementType());
+  selectedAMBtn->setAttrMatrixRequirements(AttributeMatrixSelectionFilterParameter::RequirementType());
+  selectedDCBtn->setDataContainerArray(m_Dca);
+  selectedAMBtn->setDataContainerArray(m_Dca);
 
+  //connect(selectedDCBtn, SIGNAL(pathChanged()), this, SIGNAL(parametersChanged()));
+  //connect(selectedAMBtn, SIGNAL(pathChanged()), this, SIGNAL(parametersChanged()));
 }
 
 // -----------------------------------------------------------------------------
@@ -251,22 +244,19 @@ void DataFormatPage::showEvent(QShowEvent* event)
 // -----------------------------------------------------------------------------
 void DataFormatPage::amItemSelected(QString path)
 {
-  selectedAMBtn->setText(path);
-
   DataArrayPath dap = DataArrayPath::Deserialize(path, Detail::Delimiter);
+  selectedAMBtn->setDataArrayPath(dap);
 
   AttributeMatrix::Pointer am = m_Dca->getAttributeMatrix(dap);   // This will always be valid, because we create the selection options
 
   if(nullptr == am.get())
   {
     amSelectionError->setText("An error occured retrieving the Attribute Matrix at " + path);
-    selectedAMBtn->setStyleSheet(SVStyle::Instance()->QToolSelectionButtonStyle(false));
   }
   else
   {
     //amSelectionError->hide();
     amSelectionError->setText("The tuple dimensions of the selected Attribute Matrix will be used for the Attribute Arrays.");
-    selectedAMBtn->setStyleSheet(SVStyle::Instance()->QToolSelectionButtonStyle(true));
   }
 
   ImportASCIIDataWizard* importWizard = dynamic_cast<ImportASCIIDataWizard*>(wizard());
@@ -286,12 +276,10 @@ void DataFormatPage::amItemSelected(QString path)
         QString ss = "The header name \"" + headerName + "\" matches an array name that already exists in the selected attribute matrix.";
         amSelectionError->setText(ss);
         amSelectionError->show();
-        selectedAMBtn->setStyleSheet(SVStyle::Instance()->QToolSelectionButtonStyle(false));
       }
       else
       {
         amSelectionError->hide();
-        selectedAMBtn->setStyleSheet(SVStyle::Instance()->QToolSelectionButtonStyle(true));
       }
     }
   }
@@ -311,9 +299,8 @@ void DataFormatPage::amItemSelected(QString path)
 // -----------------------------------------------------------------------------
 void DataFormatPage::dcItemSelected(QString path)
 {
-  selectedDCBtn->setText(path);
-
   DataArrayPath dap = DataArrayPath::Deserialize(path, Detail::Delimiter);
+  selectedDCBtn->setDataArrayPath(dap);
   dap.setAttributeMatrixName(amName->text());
 
   if (m_Dca->doesAttributeMatrixExist(dap) == true && createAMRadio->isChecked())
@@ -326,7 +313,6 @@ void DataFormatPage::dcItemSelected(QString path)
   }
 
   amCreationError->hide();
-  selectedDCBtn->setStyleSheet(SVStyle::Instance()->QToolSelectionButtonStyle(true));
   SVStyle::Instance()->LineEditClearStyle(amName);
   checkTupleDimensions(getTupleTable()->getData());
 }
@@ -350,7 +336,7 @@ void DataFormatPage::on_useAMRadio_toggled(bool b)
 {
   if(b)
   {
-    DataArrayPath amPath = DataArrayPath::Deserialize(selectedAMBtn->text(), "/");
+    DataArrayPath amPath = selectedAMBtn->getDataArrayPath();
     AttributeMatrix::Pointer attrMat = m_Dca->getAttributeMatrix(amPath);
     if(attrMat.get())
     {
@@ -421,6 +407,7 @@ void DataFormatPage::hideButton()
   applyChangesBtn->setVisible(false);
 }
 
+#if 0
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -576,6 +563,7 @@ void DataFormatPage::createDCSelectionMenu()
     }
   }
 }
+#endif
 
 // -----------------------------------------------------------------------------
 //
@@ -603,7 +591,7 @@ bool DataFormatPage::eventFilter(QObject* obj, QEvent* event)
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-QPoint DataFormatPage::adjustedMenuPosition(QPushButton* pushButton)
+QPoint DataFormatPage::adjustedMenuPosition(DataArrayPathSelectionWidget* pushButton)
 {
   // Calculate the actual virtual desktop QRect.
   int screenCount = QApplication::desktop()->screenCount();
@@ -1289,11 +1277,11 @@ DataArrayPath DataFormatPage::getSelectedPath()
 {
   if (createAMRadio->isChecked())
   {
-    return DataArrayPath::Deserialize(selectedDCBtn->text(), Detail::Delimiter);
+    return selectedDCBtn->getDataArrayPath();
   }
   else
   {
-    return DataArrayPath::Deserialize(selectedAMBtn->text(), Detail::Delimiter);
+    return selectedAMBtn->getDataArrayPath();
   }
 }
 
@@ -1362,12 +1350,12 @@ void DataFormatPage::updateDataArrayPath(DataArrayPath::RenameType renamePath)
   DataArrayPath currentPath;
   if(createAMRadio->isChecked())
   {
-    currentPath = DataArrayPath::Deserialize(selectedDCBtn->text(), Detail::Delimiter);
+    currentPath = selectedDCBtn->getDataArrayPath();
     currentPath.setAttributeMatrixName(amName->text());
   }
   else
   {
-    currentPath = DataArrayPath::Deserialize(selectedAMBtn->text(), Detail::Delimiter);
+    currentPath = selectedAMBtn->getDataArrayPath();
   }
 
   // Update current path
@@ -1397,4 +1385,13 @@ void DataFormatPage::updateDataArrayPath(DataArrayPath::RenameType renamePath)
   {
     selectedAMBtn->setText(currentPath.serialize(Detail::Delimiter));
   }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void DataFormatPage::setDataContainerArray(DataContainerArray::Pointer dca)
+{
+  selectedDCBtn->setDataContainerArray(dca);
+  selectedAMBtn->setDataContainerArray(dca);
 }
