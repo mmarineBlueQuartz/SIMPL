@@ -38,6 +38,7 @@
 #include <QtCore/QMetaProperty>
 
 #include "SIMPLib/Common/PipelineMessage.h"
+#include "SIMPLib/DataContainers/DataContainerArray.h"
 #include "SIMPLib/Filtering/FilterManager.h"
 #include "SIMPLib/Filtering/IFilterFactory.hpp"
 #include "SIMPLib/Filtering/FilterPipeline.h"

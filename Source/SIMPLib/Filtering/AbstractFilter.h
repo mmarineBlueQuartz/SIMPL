@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QVector>
@@ -42,9 +44,11 @@
 
 #include "SIMPLib/Common/Observable.h"
 #include "SIMPLib/Common/SIMPLibSetGetMacros.h"
-#include "SIMPLib/DataContainers/DataContainerArray.h"
+//#include "SIMPLib/DataContainers/DataContainerArray.h"
 #include "SIMPLib/FilterParameters/FilterParameter.h"
 #include "SIMPLib/SIMPLib.h"
+
+SIMPL_CLASS_DECL(DataContainerArray)
 
 class AbstractFilterParametersReader;
 class ISIMPLibPlugin;
@@ -235,7 +239,7 @@ public:
    */
   virtual const QString getFilterVersion() const;
 
-  SIMPL_INSTANCE_PROPERTY(DataContainerArray::Pointer, DataContainerArray)
+  SIMPL_INSTANCE_PROPERTY(DataContainerArrayShPtr, DataContainerArray)
 
   SIMPL_INSTANCE_PROPERTY(QVector<FilterParameter::Pointer>, FilterParameters)
 

@@ -43,6 +43,8 @@
 #include <QtGui/QColor>
 #include <QtGui/QFont>
 
+#include "SIMPLib/DataContainers/DataContainerArray.h"
+
 #include "SVWidgetsLib/Core/SVWidgetsLibConstants.h"
 
 #include "FilterParameterWidgetsDialogs.h"

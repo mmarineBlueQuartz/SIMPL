@@ -60,6 +60,7 @@
 #include "H5Support/QH5Utilities.h"
 
 #include "SIMPLib/CoreFilters/ImportHDF5Dataset.h"
+#include "SIMPLib/DataContainers/DataContainerArray.h"
 #include "SIMPLib/FilterParameters/ImportHDF5DatasetFilterParameter.h"
 
 #include "SVWidgetsLib/Widgets/ImportHDF5TreeModel.h"

@@ -43,6 +43,7 @@
 
 #include "SIMPLib/Common/Observer.h"
 #include "SIMPLib/Common/SIMPLibSetGetMacros.h"
+#include "SIMPLib/DataContainers/DataContainerArray.h"
 #include "SIMPLib/Filtering/AbstractFilter.h"
 #include "SIMPLib/SIMPLib.h"
 
@@ -67,7 +68,7 @@ class SIMPLib_EXPORT FilterPipeline : public QObject
   PYB11_PROPERTY(bool Cancel READ getCancel WRITE setCancel)
   PYB11_PROPERTY(QString Name READ getName WRITE setName)
   
-  PYB11_METHOD(DataContainerArray::Pointer run)
+  PYB11_METHOD(DataContainerArrayShPtr run)
   PYB11_METHOD(void preflightPipeline)
   PYB11_METHOD(void pushFront ARGS AbstractFilter)
   PYB11_METHOD(void pushBack ARGS AbstractFilter)
@@ -100,7 +101,7 @@ public:
    * @brief A pure virtual function that gets called from the "run()" method. Subclasses
    * are expected to create a concrete implementation of this method.
    */
-  virtual DataContainerArray::Pointer execute();
+  virtual DataContainerArrayShPtr execute();
 
   /**
    * @brief This will preflight the pipeline and report any errors that would occur during
@@ -123,7 +124,7 @@ public:
 
   virtual FilterContainerType& getFilterContainer();
 
-  virtual DataContainerArray::Pointer getDataContainerArray();
+  virtual DataContainerArrayShPtr getDataContainerArray();
 
   /**
    * @brief
@@ -174,7 +175,7 @@ public slots:
   /**
    * @brief This method is called to start the pipeline for a plugin
    */
-  virtual DataContainerArray::Pointer run();
+  virtual DataContainerArrayShPtr run();
 
   /**
    * @brief cancelPipeline
@@ -231,7 +232,7 @@ private:
 
   QVector<QObject*> m_MessageReceivers;
 
-  DataContainerArray::Pointer m_Dca;
+  DataContainerArrayShPtr m_Dca;
 
   void connectSignalsSlots();
   void disconnectSignalsSlots();

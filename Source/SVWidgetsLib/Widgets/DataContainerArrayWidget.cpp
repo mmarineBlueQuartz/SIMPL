@@ -36,6 +36,8 @@
 
 #include <QtCore/QMetaProperty>
 
+#include "SIMPLib/DataContainers/DataContainerArray.h"
+
 #include "SVWidgetsLib/Core/SVWidgetsLibConstants.h"
 
 

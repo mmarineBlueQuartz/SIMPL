@@ -42,6 +42,7 @@
 #include <QtCore/QByteArray>
 #include <QtCore/QFile>
 
+#include "SIMPLib/DataContainers/DataContainerArray.h"
 #include "SIMPLib/Geometry/ImageGeom.h"
 #include "SIMPLib/SIMPLib.h"
 

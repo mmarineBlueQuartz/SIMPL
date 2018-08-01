@@ -329,6 +329,10 @@ public:     \
   public:\
   SIMPL_GET_PROPERTY(type, prpty)
 
+#define SIMPL_CLASS_DECL(type)\
+  class type;\
+  typedef std::shared_ptr<type> type##ShPtr;
+
 
 /* *****************************************************************************'
  * PyBind11 Macros that we can use to explicitly define which setters & getters
