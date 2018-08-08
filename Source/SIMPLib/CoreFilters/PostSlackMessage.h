@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <QtCore/QMutex>
 #include <QtCore/QWaitCondition>
 
 #include "SIMPLib/Common/SIMPLibSetGetMacros.h"

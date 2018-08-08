@@ -41,6 +41,8 @@
 
 #include <QtCore/QSignalMapper>
 
+#include "SIMPLib/DataContainers/DataArrayPath.h"
+#include "SIMPLib/DataContainers/DataContainerArray.h"
 #include "SIMPLib/Filtering/FilterManager.h"
 
 #include "SVWidgetsLib/SVWidgetsLib.h"

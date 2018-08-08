@@ -36,6 +36,7 @@
 #pragma once
 
 #include <QtCore/QWaitCondition>
+#include <QtCore/QMutex>
 
 #include "SIMPLib/Common/SIMPLibSetGetMacros.h"
 #include "SIMPLib/Filtering/AbstractFilter.h"
