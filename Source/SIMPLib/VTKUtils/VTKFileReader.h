@@ -42,6 +42,7 @@
 #include "SIMPLib/SIMPLib.h"
 #include "SIMPLib/Common/SIMPLibSetGetMacros.h"
 #include "SIMPLib/CoreFilters/FileReader.h"
+#include "SIMPLib/DataContainers/DataContainerArray.h"
 
 /**
  * @class VTKFileReader VTKFileReader.h PathToHeader/VTKFileReader.h
