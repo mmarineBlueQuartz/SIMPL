@@ -62,51 +62,14 @@
     </widget>
    </item>
    <item row="0" column="0">
-    <widget class="SVPipelineView" name="pipelineView">
-     <property name="mouseTracking">
-      <bool>true</bool>
-     </property>
-     <property name="focusPolicy">
-      <enum>Qt::NoFocus</enum>
-     </property>
-     <property name="acceptDrops">
-      <bool>true</bool>
-     </property>
-     <property name="styleSheet">
-      <string notr="true"/>
-     </property>
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <property name="showDropIndicator" stdset="0">
-      <bool>false</bool>
-     </property>
-     <property name="dragEnabled">
-      <bool>true</bool>
-     </property>
-     <property name="dragDropMode">
-      <enum>QAbstractItemView::DragDrop</enum>
-     </property>
-     <property name="defaultDropAction">
-      <enum>Qt::MoveAction</enum>
-     </property>
-     <property name="selectionMode">
-      <enum>QAbstractItemView::ExtendedSelection</enum>
-     </property>
-     <property name="movement">
-      <enum>QListView::Snap</enum>
-     </property>
-     <property name="spacing">
-      <number>1</number>
-     </property>
-    </widget>
+    <widget class="SVPipelineView" name="pipelineView"/>
    </item>
   </layout>
  </widget>
  <customwidgets>
   <customwidget>
    <class>SVPipelineView</class>
-   <extends>QListView</extends>
+   <extends>QTreeView</extends>
    <header location="global">SVPipelineView.h</header>
   </customwidget>
  </customwidgets>

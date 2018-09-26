@@ -53,6 +53,9 @@ FilterPipeline::FilterPipeline()
 , m_PipelineName("")
 , m_Dca(DataContainerArray::New())
 {
+  connect(this, &FilterPipeline::filterAdded, [=] { emit pipelineWasEdited(); });
+  connect(this, &FilterPipeline::filterRemoved, [=] { emit pipelineWasEdited(); });
+  connect(this, &FilterPipeline::pipelineCleared, [=] { emit pipelineWasEdited(); });
 }
 
 // -----------------------------------------------------------------------------
@@ -101,11 +104,11 @@ FilterPipeline::Pointer FilterPipeline::deepCopy()
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-QJsonObject FilterPipeline::toJson()
+QJsonObject FilterPipeline::toJson() const
 {
   QJsonObject json;
 
-  FilterContainerType container = getFilterContainer();
+  FilterContainerType container = m_Pipeline;
   int count = container.size();
   int offset = 0;
 
@@ -277,6 +280,19 @@ void FilterPipeline::fromJson(const QJsonObject& json, IObserver* obs)
 // -----------------------------------------------------------------------------
 void FilterPipeline::setCancel(bool value)
 {
+  if(true == value && PipelineState::Running != m_PipelineState)
+  {
+    return;
+  }
+
+  if(true == value)
+  {
+    m_PipelineState = PipelineState::Cancelling;
+  }
+  else
+  {
+    m_PipelineState = PipelineState::Ready;
+  }
   this->m_Cancel = value;
   if(nullptr != m_CurrentFilter.get())
   {
@@ -317,44 +333,77 @@ DataContainerArray::Pointer FilterPipeline::run()
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void FilterPipeline::pushFront(AbstractFilter::Pointer f)
+bool FilterPipeline::pushFront(AbstractFilter::Pointer f)
 {
+  if(m_PipelineState == PipelineState::Running || m_PipelineState == PipelineState::Cancelling)
+  {
+    return false;
+  }
+
   m_Pipeline.push_front(f);
   updatePrevNextFilters();
-  emit pipelineWasEdited();
+  emit filterAdded(0, f);
+
+  return true;
 }
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void FilterPipeline::popFront()
+bool FilterPipeline::popFront()
 {
+  if(m_PipelineState == PipelineState::Running || m_PipelineState == PipelineState::Cancelling && size() > 0)
+  {
+    return false;
+  }
+
+  AbstractFilter::Pointer f = m_Pipeline[0];
   m_Pipeline.pop_front();
   updatePrevNextFilters();
-  emit pipelineWasEdited();
+  emit filterRemoved(0, f);
+
+  return true;
 }
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void FilterPipeline::pushBack(AbstractFilter::Pointer f)
+bool FilterPipeline::pushBack(AbstractFilter::Pointer f)
 {
+  if(m_PipelineState == PipelineState::Running || m_PipelineState == PipelineState::Cancelling)
+  {
+    return false;
+  }
+
   m_Pipeline.push_back(f);
   updatePrevNextFilters();
-  emit pipelineWasEdited();
+  emit filterAdded(m_Pipeline.size() - 1, f);
+  return true;
 }
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void FilterPipeline::popBack()
+bool FilterPipeline::popBack()
 {
+  if(m_PipelineState == PipelineState::Running || m_PipelineState == PipelineState::Cancelling && size() > 0)
+  {
+    return false;
+  }
+
+  AbstractFilter::Pointer f = m_Pipeline.back();
   m_Pipeline.pop_back();
   updatePrevNextFilters();
-  emit pipelineWasEdited();
+  emit filterRemoved(0, f);
+  return true;
 }
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void FilterPipeline::insert(size_t index, AbstractFilter::Pointer f)
+bool FilterPipeline::insert(size_t index, AbstractFilter::Pointer f)
 {
+  if(m_PipelineState == PipelineState::Running || m_PipelineState == PipelineState::Cancelling && size() >= index)
+  {
+    return false;
+  }
+
   FilterContainerType::iterator it = m_Pipeline.begin();
   for(size_t i = 0; i < index; ++i)
   {
@@ -362,46 +411,60 @@ void FilterPipeline::insert(size_t index, AbstractFilter::Pointer f)
   }
   m_Pipeline.insert(it, f);
   updatePrevNextFilters();
-  emit pipelineWasEdited();
+  emit filterAdded(index, f);
+  return true;
 }
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void FilterPipeline::erase(size_t index)
+bool FilterPipeline::erase(size_t index)
 {
+  if(m_PipelineState == PipelineState::Running || m_PipelineState == PipelineState::Cancelling && size() > index)
+  {
+    return false;
+  }
+
   FilterContainerType::iterator it = m_Pipeline.begin();
   for(size_t i = 0; i < index; ++i)
   {
     ++it;
   }
+  AbstractFilter::Pointer f = (*it);
   m_Pipeline.erase(it);
   updatePrevNextFilters();
-  emit pipelineWasEdited();
+  emit filterRemoved(index, f);
+  return true;
 }
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void FilterPipeline::clear()
+bool FilterPipeline::clear()
 {
+  if(m_PipelineState == PipelineState::Running || m_PipelineState == PipelineState::Cancelling)
+  {
+    return false;
+  }
+
   for(FilterContainerType::iterator iter = m_Pipeline.begin(); iter != m_Pipeline.end(); ++iter)
   {
     (*iter)->setPreviousFilter(AbstractFilter::NullPointer());
     (*iter)->setNextFilter(AbstractFilter::NullPointer());
   }
   m_Pipeline.clear();
-  emit pipelineWasEdited();
+  emit pipelineCleared();
+  return true;
 }
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-size_t FilterPipeline::size()
+size_t FilterPipeline::size() const
 {
   return m_Pipeline.size();
 }
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-bool FilterPipeline::empty()
+bool FilterPipeline::empty() const
 {
   return m_Pipeline.isEmpty();
 }
@@ -409,15 +472,25 @@ bool FilterPipeline::empty()
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+int FilterPipeline::indexOf(AbstractFilter::Pointer filter) const
+{
+  return m_Pipeline.indexOf(filter);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 AbstractFilter::Pointer FilterPipeline::removeFirstFilterByName(const QString& name)
 {
+  int position = 0;
   AbstractFilter::Pointer f = AbstractFilter::NullPointer();
-  for(FilterContainerType::iterator it = m_Pipeline.begin(); it != m_Pipeline.end(); ++it)
+  for(FilterContainerType::iterator it = m_Pipeline.begin(); it != m_Pipeline.end(); ++it, ++position)
   {
     if((*it)->getHumanLabel().compare(name) == 0)
     {
       f = *it;
       m_Pipeline.erase(it);
+      emit filterRemoved(position, f);
       break;
     }
   }
@@ -430,9 +503,80 @@ AbstractFilter::Pointer FilterPipeline::removeFirstFilterByName(const QString& n
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+FilterPipeline::FilterContainerType::iterator FilterPipeline::begin()
+{
+  return m_Pipeline.begin();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+FilterPipeline::FilterContainerType::const_iterator FilterPipeline::begin() const
+{
+  return m_Pipeline.begin();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+FilterPipeline::FilterContainerType::iterator FilterPipeline::end()
+{
+  return m_Pipeline.end();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+FilterPipeline::FilterContainerType::const_iterator FilterPipeline::end() const
+{
+  return m_Pipeline.end();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 FilterPipeline::FilterContainerType& FilterPipeline::getFilterContainer()
 {
   return m_Pipeline;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+FilterPipeline::FilterState FilterPipeline::getFilterState(AbstractFilter::Pointer filter) const
+{
+  if(nullptr == filter)
+  {
+    return FilterState::Disabled;
+  }
+
+  if(false == filter->getEnabled())
+  {
+    return FilterState::Disabled;
+  }
+
+  // Non-Disabled filters in a stopped pipeline are always ready
+  if(getPipelineState() == PipelineState::Ready)
+  {
+    return FilterState::Ready;
+  }
+  if(filter == m_CurrentFilter)
+  {
+    return FilterState::Executing;
+  }
+  else
+  {
+    // Check if the filter has already been completed
+    for(auto iter = begin(); iter != end() && (*iter) != m_CurrentFilter; iter++)
+    {
+      if((*iter) == filter)
+      {
+        return FilterState::Completed;
+      }
+    }
+  }
+
+  return FilterState::Ready;
 }
 
 // -----------------------------------------------------------------------------
@@ -521,6 +665,7 @@ int FilterPipeline::preflightPipeline()
 
   setErrorCondition(0);
   int preflightError = 0;
+  m_ErrorState = ErrorState::Ok;
 
   DataArrayPath::RenameContainer renamedPaths;
   DataArrayPath::RenameContainer filterRenamedPaths;
@@ -549,6 +694,16 @@ int FilterPipeline::preflightPipeline()
       (*filter)->setCancel(false); // Reset the cancel flag
       preflightError |= (*filter)->getErrorCondition();
       (*filter)->setDataContainerArray(dca->deepCopy(false));
+      // Update ErrorState
+      if((*filter)->getErrorCondition() < 0)
+      {
+        m_ErrorState = ErrorState::Error;
+      }
+      else if(ErrorState::Error != m_ErrorState && (*filter)->getWarningCondition() < 0)
+      {
+        m_ErrorState = ErrorState::Warning;
+      }
+
       std::list<DataArrayPath> currentCreatedPaths = (*filter)->getCreatedPaths();
 
       // Check if an existing renamed path was created by this filter
@@ -623,10 +778,10 @@ int FilterPipeline::preflightPipeline()
 // -----------------------------------------------------------------------------
 DataContainerArray::Pointer FilterPipeline::execute()
 {
-  int err = 0;
-
   // Clear pipeline cancel state
   setCancel(false);
+  m_PipelineState = PipelineState::Running;
+  m_ErrorState = ErrorState::Ok;
 
   connectSignalsSlots();
 
@@ -641,6 +796,7 @@ DataContainerArray::Pointer FilterPipeline::execute()
     connect(this, SIGNAL(pipelineGeneratedMessage(const PipelineMessage&)), m_MessageReceivers.at(i), SLOT(processPipelineMessage(const PipelineMessage&)));
   }
 
+  emit pipelineStarted();
   PipelineMessage progValue("", "", 0, PipelineMessage::MessageType::ProgressValue, -1);
   for(FilterContainerType::iterator filter = m_Pipeline.begin(); filter != m_Pipeline.end(); ++filter)
   {
@@ -667,9 +823,11 @@ DataContainerArray::Pointer FilterPipeline::execute()
       filt->execute();
       disconnectFilterNotifications((*filter).get());
       filt->setDataContainerArray(DataContainerArray::NullPointer());
-      err = filt->getErrorCondition();
+      int err = filt->getErrorCondition();
+      int warning = filt->getWarningCondition();
       if(err < 0)
       {
+        m_ErrorState = ErrorState::Error;
         setErrorCondition(err);
         progValue.setFilterClassName(filt->getNameOfClass());
         progValue.setFilterHumanLabel(filt->getHumanLabel());
@@ -684,7 +842,12 @@ DataContainerArray::Pointer FilterPipeline::execute()
         emit pipelineFinished();
         disconnectSignalsSlots();
 
+        m_PipelineState = PipelineState::Ready;
         return m_Dca;
+      }
+      else if(warning < 0)
+      {
+        m_ErrorState = ErrorState::Warning;
       }
     }
 
@@ -715,6 +878,7 @@ DataContainerArray::Pointer FilterPipeline::execute()
     disconnect(this, SIGNAL(pipelineGeneratedMessage(const PipelineMessage&)), m_MessageReceivers.at(i), SLOT(processPipelineMessage(const PipelineMessage&)));
   }
 
+  m_PipelineState = PipelineState::Ready;
   return m_Dca;
 }
 
@@ -769,4 +933,20 @@ DataContainerArray::Pointer FilterPipeline::getDataContainerArray()
 void FilterPipeline::clearDataContainerArray()
 {
   m_Dca = DataContainerArray::NullPointer();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+FilterPipeline::PipelineState FilterPipeline::getPipelineState() const
+{
+  return m_PipelineState;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+FilterPipeline::ErrorState FilterPipeline::getErrorState() const
+{
+  return m_ErrorState;
 }

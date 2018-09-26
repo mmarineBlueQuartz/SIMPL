@@ -42,10 +42,11 @@
 
 #include <QtGui/QPainter>
 #include <QtWidgets/QLabel>
-#include <QtWidgets/QListView>
+//#include <QtWidgets/QListView>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QTextEdit>
+#include <QtWidgets/QTreeView>
 #include <QtWidgets/QVBoxLayout>
 
 #include "SIMPLib/Common/PipelineMessage.h"
@@ -73,7 +74,7 @@ class QSignalMapper;
 /*
  *
  */
-class SVWidgetsLib_EXPORT SVPipelineView : public QListView, public PipelineView
+class SVWidgetsLib_EXPORT SVPipelineView : public QTreeView, public PipelineView
 {
   Q_OBJECT
 
@@ -134,7 +135,7 @@ public:
    * @brief getPipelineModel
    * @return
    */
-  PipelineModel* getPipelineModel();
+  PipelineModel* getPipelineModel() const;
 
   /**
    * @brief Returns a new FilterPipeline with deep copies of the current filters.
@@ -143,18 +144,10 @@ public:
   FilterPipeline::Pointer getFilterPipelineCopy();
 
   /**
-  * @brief Returns the saved FilterPipeline being operated on by the view.  
-  * This pipeline is updated on Save, Save As, and when opeining bookmarks.
-  * This pipeline does not keep track of changes made between those times.
-  * @return
-  */
-  FilterPipeline::Pointer getSavedFilterPipeline();
-
-  /**
    * @brief Returns the pipeline name
    * @return
    */
-  QString getPipelineName();
+  //QString getPipelineName();
 
   /**
    * @brief writePipeline
@@ -168,6 +161,8 @@ public:
    * @return
    */
   bool isPipelineCurrentlyRunning();
+
+  FilterPipeline::Pointer getCurrentPipeline();
 
   /**
    * @brief Returns the regular disable button pixmap in the current highlighted text color
@@ -234,7 +229,7 @@ public slots:
    * @brief setPipelineName
    * @param name
    */
-  void setPipelineName(QString name);
+  //void setPipelineName(QString name);
 
   /**
    * @brief Adds a filter with the specified filterClassName to the current model
@@ -380,10 +375,7 @@ protected:
   void setupGui();
 
   void connectSignalsSlots();
-
-  void updatePipelineFromView(FilterPipeline::Pointer pipeline);
-  void updateLocalTempPipeline();
-
+  
   /**
     * @brief beginDrag
     * @param event
@@ -432,17 +424,6 @@ private slots:
   void listenFilterCompleted(AbstractFilter* filter);
 
   /**
-   * @brief finishPipeline
-   * @param pipelineIndex
-   */
-  void finishPipeline();
-
-  /**
-   * @brief endPipelineThread
-   */
-  void endPipelineThread();
-
-  /**
    * @brief processPipelineMessage
    * @param msg
    */
@@ -468,9 +449,6 @@ private:
   QAction* m_ActionCopy = nullptr;
   QAction* m_ActionPaste = nullptr;
   QAction* m_ActionClearPipeline = new QAction("Clear Pipeline", this);
-
-  FilterPipeline::Pointer m_SavedPipeline = nullptr;
-  FilterPipeline::Pointer m_TempPipeline = nullptr;
 
   QPixmap m_DisableBtnPixmap;
   QPixmap m_DisableHighlightedPixmap;

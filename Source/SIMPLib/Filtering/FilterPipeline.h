@@ -79,6 +79,31 @@ class SIMPLib_EXPORT FilterPipeline : public QObject
  
  
 public:
+  using EnumType = unsigned int;
+  enum class PipelineState : EnumType
+  {
+    Ready = 0,
+    Running = 1,
+    Cancelling = 2,
+    Paused = 3,
+  };
+
+  enum class ErrorState : EnumType
+  {
+    Ok = 0,
+    Error = 1,
+    Warning = 2,
+  };
+
+  enum class FilterState : EnumType
+  {
+    Ready = 0,      //!<
+    Executing = 1, //!<
+    Completed = 2, //!<
+    Disabled = 3
+  };
+
+
   SIMPL_SHARED_POINTERS(FilterPipeline)
   SIMPL_TYPE_MACRO(FilterPipeline)
   SIMPL_STATIC_NEW_MACRO(FilterPipeline)
@@ -89,6 +114,8 @@ public:
 
   SIMPL_INSTANCE_PROPERTY(int, ErrorCondition)
   SIMPL_INSTANCE_PROPERTY(AbstractFilter::Pointer, CurrentFilter)
+
+  ErrorState getErrorState() const;
 
   /**
    * @brief Cancel the operation
@@ -109,18 +136,31 @@ public:
   virtual int preflightPipeline();
 
   /**
+   * @brief Returns the FilterState for the given filter
+   * @param filter
+   * @return
+   */
+  FilterState getFilterState(AbstractFilter::Pointer filter) const;
+
+  /**
    * @brief
    */
-  virtual void pushFront(AbstractFilter::Pointer f);
-  virtual void popFront();
-  virtual void pushBack(AbstractFilter::Pointer f);
-  virtual void popBack();
-  virtual void insert(size_t index, AbstractFilter::Pointer f);
-  virtual void erase(size_t index);
-  virtual void clear();
-  virtual size_t size();
-  virtual bool empty();
+  virtual bool pushFront(AbstractFilter::Pointer f);
+  virtual bool popFront();
+  virtual bool pushBack(AbstractFilter::Pointer f);
+  virtual bool popBack();
+  virtual bool insert(size_t index, AbstractFilter::Pointer f);
+  virtual bool erase(size_t index);
+  virtual bool clear();
+  virtual size_t size() const;
+  virtual bool empty() const;
+  virtual int indexOf(AbstractFilter::Pointer filter) const;
 
+  FilterContainerType::iterator begin();
+  FilterContainerType::const_iterator begin() const;
+  FilterContainerType::iterator end();
+  FilterContainerType::const_iterator end() const;
+  
   virtual FilterContainerType& getFilterContainer();
 
   /**
@@ -159,6 +199,12 @@ public:
   QString getName();
 
   /**
+   * @brief Returns the PipelineState
+   * @return
+   */
+  PipelineState getPipelineState() const;
+
+  /**
   * @brief This method returns a deep copy of the FilterPipeline and all its filters
   * @return
   */
@@ -168,7 +214,7 @@ public:
   * @brief Returns the FilterPipeline contents as a JSon string
   * @return
   */
-  virtual QJsonObject toJson();
+  virtual QJsonObject toJson() const;
 
   /**
   * @brief Sets the contents of the FilterPipeline to match the given JSon value.
@@ -209,6 +255,11 @@ signals:
   void pipelineGeneratedMessage(const PipelineMessage& message);
 
   /**
+  * @brief This method is emitted from the pipeline and signals the pipeline has started execution
+  */
+  void pipelineStarted();
+
+  /**
   * @brief This method is emitted from the pipeline and signals a pipeline pause
   */
   void pipelineHasPaused();
@@ -235,6 +286,25 @@ signals:
   void pipelineWasEdited();
 
   /**
+   * @brief This signal is emitted when a filter is added
+   * @param position
+   * @param filter
+   */
+  void filterAdded(int position, AbstractFilter::Pointer filter);
+
+  /**
+   * @brief This signal is emitted when a filter is removed
+   * @param position
+   * @param filter
+   */
+  void filterRemoved(int position, AbstractFilter::Pointer filter);
+
+  /**
+   * @brief This signal is emitted when the pipeline is cleared
+   */
+  void pipelineCleared();
+
+  /**
   * @brief This signal is emitted when the pipeline name changes
   * @param oldName The FilterPipeline's previous name
   * @param newName The FilterPipeline's current name
@@ -251,6 +321,8 @@ private:
   bool m_Cancel;
   FilterContainerType m_Pipeline;
   QString m_PipelineName;
+  PipelineState m_PipelineState = PipelineState::Ready;
+  ErrorState m_ErrorState = ErrorState::Ok;
 
   QVector<QObject*> m_MessageReceivers;
 

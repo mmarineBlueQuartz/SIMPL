@@ -193,14 +193,14 @@ void MoveFilterCommand::addFilter(AbstractFilter::Pointer filter, int insertionI
 
   model->insertRow(insertionIndex);
 
-  QModelIndex filterIndex = model->index(insertionIndex, PipelineItem::Contents);
+  QModelIndex filterIndex = model->index(insertionIndex, AbstractPipelineItem::Contents);
 //  model->setData(filterIndex, filter->getHumanLabel(), Qt::DisplayRole);
-  model->setData(filterIndex, static_cast<int>(PipelineItem::ItemType::Filter), PipelineModel::ItemTypeRole);
+  // model->setData(filterIndex, static_cast<int>(AbstractPipelineItem::ItemType::Filter), PipelineModel::ItemTypeRole);
   model->setFilter(filterIndex, filter);
 
   if (filter->getEnabled() == false)
   {
-    model->setData(filterIndex, static_cast<int>(PipelineItem::WidgetState::Disabled), PipelineModel::WidgetStateRole);
+    model->setData(filterIndex, static_cast<int>(FilterPipeline::FilterState::Disabled), PipelineModel::FilterStateRole);
   }
 
   FilterInputWidget* fiw = model->filterInputWidget(filterIndex);
@@ -214,7 +214,7 @@ void MoveFilterCommand::addFilter(AbstractFilter::Pointer filter, int insertionI
 void MoveFilterCommand::removeFilter(int filterIndex)
 {
   PipelineModel* model = m_PipelineView->getPipelineModel();
-  QModelIndex index = model->index(filterIndex, PipelineItem::Contents);
+  QModelIndex index = model->index(filterIndex, AbstractPipelineItem::Contents);
 
   FilterInputWidget* fiw = model->filterInputWidget(index);
 

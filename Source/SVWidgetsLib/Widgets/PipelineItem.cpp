@@ -31,36 +31,32 @@
 
 #include "PipelineItem.h"
 
+#include <QtCore/QFileInfo>
 #include <QtCore/QStringList>
+#include <QtCore/QThread>
 #include <QtGui/QColor>
+#include <QtWidgets/QMessageBox>
+
+#include "SIMPLib/FilterParameters/H5FilterParametersWriter.h"
+#include "SIMPLib/FilterParameters/JsonFilterParametersWriter.h"
 
 #include "SVWidgetsLib/Widgets/FilterInputWidget.h"
+#include "SVWidgetsLib/Widgets/PipelineFilterItem.h"
+#include "SVWidgetsLib/Widgets/PipelineModel.h"
+#include "SVWidgetsLib/Widgets/PipelineRootItem.h"
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-PipelineItem::PipelineItem(const QVector<QVariant>& data, PipelineItem* parent)
-: m_FilterInputWidget(nullptr)
-, m_FilterEnabled(true)
-, m_ActivePipeline(false)
-, m_PipelineSaved(true)
-, m_Icon(QIcon())
-, m_Expanded(false)
+PipelineItem::PipelineItem(FilterPipeline::Pointer pipeline, PipelineRootItem* parent)
+: AbstractPipelineItem(parent)
+, m_SavedPipeline(pipeline)
 , m_ItemTooltip("")
-, m_BorderSize(0)
-, m_Size(QSize(0, MaxHeight))
-, m_Height(0)
-, m_Width(0)
-, m_XOffset(0)
-, m_YOffset(0)
-, m_WidgetState(PipelineItem::WidgetState::Ready)
-, m_PipelineState(PipelineItem::PipelineState::Stopped)
-, m_ErrorState(PipelineItem::ErrorState::Ok)
-, m_ItemType(PipelineItem::ItemType::Unknown)
-, m_ItemData(data)
-, m_ParentItem(parent)
 {
-
+  m_TempPipeline = m_SavedPipeline->deepCopy();
+  m_TempPipeline->setName(m_SavedPipeline->getName());
+  updateFilterInputWidgets();
+  connectPipeline();
 }
 
 // -----------------------------------------------------------------------------
@@ -68,23 +64,344 @@ PipelineItem::PipelineItem(const QVector<QVariant>& data, PipelineItem* parent)
 // -----------------------------------------------------------------------------
 PipelineItem::~PipelineItem()
 {
-  qDeleteAll(m_ChildItems);
+  qDeleteAll(m_FilterItems);
 }
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-QString PipelineItem::TopLevelString()
+AbstractPipelineItem::ItemType PipelineItem::getItemType() const
 {
-  return QString::fromLatin1("[Top Level]");
+  return ItemType::Pipeline;
 }
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-PipelineItem* PipelineItem::child(int number)
+QString PipelineItem::getPipelineName() const
 {
-  return m_ChildItems.value(number);
+  return m_SavedPipeline->getName();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::setPipelineName(QString name)
+{
+  m_SavedPipeline->setName(name);
+  m_TempPipeline->setName(name);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+FilterPipeline::Pointer PipelineItem::getSavedPipeline() const
+{
+  return m_SavedPipeline;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+FilterPipeline::Pointer PipelineItem::getCurrentPipeline() const
+{
+  return m_TempPipeline;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::connectPipeline()
+{
+  if(nullptr == m_TempPipeline)
+  {
+    return;
+  }
+
+  connect(m_TempPipeline.get(), &FilterPipeline::filterAdded, this, &PipelineItem::filterAdded);
+  connect(m_TempPipeline.get(), &FilterPipeline::filterRemoved, this, &PipelineItem::filterRemoved);
+  connect(m_TempPipeline.get(), &FilterPipeline::pipelineFinished, this, &PipelineItem::pipelineUpdated);
+  connect(m_TempPipeline.get(), &FilterPipeline::pipelineNameChanged, this, &PipelineItem::pipelineUpdated);
+  //connect(m_TempPipeline.get(), &FilterPipeline::pipelineWasEdited, this, &PipelineItem::preflightPipeline);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+int PipelineItem::save()
+{
+  if(m_CurrentPath.isEmpty())
+  {
+    emit statusMessage(tr("The pipeline was not written to file. File path required in order to save pipeline."));
+    return -1;
+  }
+
+  return saveAs(m_CurrentPath);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+int PipelineItem::saveAs(const QString& outputPath)
+{
+  bool newPath = (m_CurrentPath.compare(outputPath) != 0);
+
+  QFileInfo fi(outputPath);
+  QString ext = fi.completeSuffix();
+
+  // If the filePath already exists - delete it so that we get a clean write to the file
+  if(fi.exists() == true && (ext == "dream3d" || ext == "json"))
+  {
+    QFile f(outputPath);
+    if(f.remove() == false)
+    {
+      QMessageBox::warning(nullptr, QString::fromLatin1("Pipeline Write Error"), QString::fromLatin1("There was an error removing the existing pipeline file. The pipeline was NOT saved."));
+      return -1;
+    }
+  }
+
+  // Create a Pipeline Object and fill it with the filters from this View
+  FilterPipeline::Pointer pipeline = m_TempPipeline;
+
+  int err = 0;
+  if(ext == "dream3d")
+  {
+    QList<IObserver*> observers;
+    for(int i = 0; i < m_PipelineMessageObservers.size(); i++)
+    {
+      observers.push_back(reinterpret_cast<IObserver*>(m_PipelineMessageObservers[i]));
+    }
+
+    H5FilterParametersWriter::Pointer dream3dWriter = H5FilterParametersWriter::New();
+    err = dream3dWriter->writePipelineToFile(pipeline, fi.absoluteFilePath(), fi.fileName(), observers);
+  }
+  else if(ext == "json")
+  {
+    QList<IObserver*> observers;
+    for(int i = 0; i < m_PipelineMessageObservers.size(); i++)
+    {
+      observers.push_back(reinterpret_cast<IObserver*>(m_PipelineMessageObservers[i]));
+    }
+
+    JsonFilterParametersWriter::Pointer jsonWriter = JsonFilterParametersWriter::New();
+    jsonWriter->writePipelineToFile(pipeline, fi.absoluteFilePath(), fi.fileName(), observers);
+  }
+  else
+  {
+    emit statusMessage(tr("The pipeline was not written to file '%1'. '%2' is an unsupported file extension.").arg(fi.fileName()).arg(ext));
+    return -1;
+  }
+
+  if(err < 0)
+  {
+    emit statusMessage(tr("There was an error while saving the pipeline to file '%1'.").arg(fi.fileName()));
+    return -1;
+  }
+  else
+  {
+    emit statusMessage(tr("The pipeline has been saved successfully to '%1'.").arg(fi.fileName()));
+  }
+
+  // Store output path
+  m_CurrentPath = outputPath;
+
+  // Update temp pipeline
+  if(newPath)
+  {
+    m_TempPipeline = m_TempPipeline->deepCopy();
+    m_SavedPipeline = m_TempPipeline->deepCopy();
+    // Set pipeline name based on the output path
+    setPipelineName(fi.fileName());
+  }
+  else
+  {
+    m_SavedPipeline = m_TempPipeline->deepCopy();
+  }
+
+  // Update FilterItems
+  updateFilterInputWidgets();
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::updateFromSaved()
+{
+  m_TempPipeline = FilterPipeline::FromJson(m_SavedPipeline->toJson());
+  
+  // Update FilterItems + num children
+  updateFilterInputWidgets();
+
+  // RemoveFiltersCommand
+  // AddFiltersCommand
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool PipelineItem::pipelineHasChanges() const
+{
+  return m_TempPipeline->toJson() != m_SavedPipeline->toJson();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::preflightPipeline()
+{
+  clearIssues();
+
+  // Preflight the pipeline
+  qDebug() << "Preflight the Pipeline ... ";
+  int err = m_TempPipeline->preflightPipeline();
+  if(err < 0)
+  {
+    // TODO: Set FilterStates for errors and warnings
+  }
+
+  qDebug() << "----------- SVPipelineView::preflightPipeline End --------------";
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::executePipeline()
+{
+  if(m_WorkerThread != nullptr)
+  {
+    if(false == m_WorkerThread->isFinished())
+    {
+      m_WorkerThread->wait(); // Wait until the thread is complete
+    }
+    if(m_WorkerThread->isFinished() == true)
+    {
+      delete m_WorkerThread;
+      m_WorkerThread = nullptr;
+    }
+  }
+  m_WorkerThread = new QThread(); // Create a new Thread Resource
+  m_WorkerThread->setObjectName("Pipeline Thread");
+
+  emit stdOutMessage("<b>Preflight Pipeline.....</b>");
+  // Give the pipeline one last chance to preflight and get all the latest values from the GUI
+  int err = m_TempPipeline->preflightPipeline();
+  if(err < 0)
+  {
+    m_TempPipeline->clearDataContainerArray();
+    return;
+  }
+  emit stdOutMessage("    Preflight Results: 0 Errors");
+
+  // Store DataContainerArray from Preflight for post-Execute
+  m_PreflightDataContainerArrays.clear();
+  FilterPipeline::FilterContainerType filters = m_TempPipeline->getFilterContainer();
+  for(FilterPipeline::FilterContainerType::size_type i = 0; i < filters.size(); i++)
+  {
+    m_PreflightDataContainerArrays.push_back(filters[i]->getDataContainerArray()->deepCopy(true));
+  }
+
+  // Move the FilterPipeline object into the thread that we just created.
+  m_TempPipeline->moveToThread(m_WorkerThread);
+
+  /* Connect the signal 'started()' from the QThread to the 'run' slot of the
+   * PipelineBuilder object. Since the PipelineBuilder object has been moved to another
+   * thread of execution and the actual QThread lives in *this* thread then the
+   * type of connection will be a Queued connection.
+   */
+   // When the thread starts its event loop, start the PipelineBuilder going
+  connect(m_WorkerThread, SIGNAL(started()), m_TempPipeline.get(), SLOT(run()));
+
+  // When the PipelineBuilder ends then tell the QThread to stop its event loop
+  m_PipelineConnection = connect(m_TempPipeline.get(), &FilterPipeline::pipelineFinished, [=]() { pipelineFinished(); });
+
+  // When the QThread finishes, tell this object that it has finished.
+  connect(m_WorkerThread, SIGNAL(finished()), this, SLOT(endPipelineThread()));
+
+  m_WorkerThread->start();
+  emit stdOutMessage("");
+  emit stdOutMessage("<b>*************** PIPELINE STARTED ***************</b>");
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::pipelineFinished()
+{
+  if((nullptr == m_TempPipeline) || (!m_PipelineConnection))
+  {
+    return;
+  }
+
+  if(m_TempPipeline->getCancel())
+  {
+    stdOutMessage("<b>*************** PIPELINE CANCELED ***************</b>");
+  }
+  else
+  {
+    stdOutMessage("<b>*************** PIPELINE FINISHED ***************</b>");
+  }
+  stdOutMessage("");
+
+  // Put back the DataContainerArray for each filter at the conclusion of running
+  // the pipeline. this keeps the data browser current and up to date.
+  FilterPipeline::FilterContainerType filters = m_TempPipeline->getFilterContainer();
+  for(FilterPipeline::FilterContainerType::size_type i = 0; i < filters.size(); i++)
+  {
+    filters[i]->setDataContainerArray(m_PreflightDataContainerArrays[i]);
+  }
+
+  m_TempPipeline->moveToThread(QApplication::instance()->thread());
+
+  disconnect(m_PipelineConnection);
+  m_WorkerThread->quit();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::endPipelineThread()
+{
+  if(nullptr == m_TempPipeline)
+  {
+    return;
+  }
+
+  if(!m_TempPipeline->getCancel())
+  {
+    // Emit the pipeline output if there were no errors during execution
+    if(m_TempPipeline->getErrorCondition() == 0)
+    {
+      emit pipelineOutput(m_TempPipeline, m_TempPipeline->getDataContainerArray());
+    }
+  }
+  m_TempPipeline->clearDataContainerArray();
+
+  emit pipelineFinished();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::cancelPipeline()
+{
+  if(m_TempPipeline->getPipelineState() != FilterPipeline::PipelineState::Ready)
+  {
+    m_TempPipeline->cancelPipeline();
+  }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+int PipelineItem::childIndex() const
+{
+  if(parent())
+  {
+    return parent()->indexOf(const_cast<PipelineItem*>(this));
+  }
+
+  return -1;
 }
 
 // -----------------------------------------------------------------------------
@@ -92,114 +409,136 @@ PipelineItem* PipelineItem::child(int number)
 // -----------------------------------------------------------------------------
 int PipelineItem::childCount() const
 {
-  return m_ChildItems.count();
+  return m_FilterItems.count();
 }
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-int PipelineItem::childNumber() const
+bool PipelineItem::insertChild(int position, AbstractPipelineItem* child)
 {
-  if(m_ParentItem)
+  if(nullptr == dynamic_cast<PipelineFilterItem*>(child))
   {
-    return m_ParentItem->m_ChildItems.indexOf(const_cast<PipelineItem*>(this));
+    return false;
   }
-
-  return 0;
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-int PipelineItem::columnCount() const
-{
-  return m_ItemData.count();
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-QVariant PipelineItem::data(int column) const
-{
-  return m_ItemData.value(column);
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-AbstractFilter::Pointer PipelineItem::getFilter()
-{
-  return m_Filter;
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-void PipelineItem::setFilter(AbstractFilter::Pointer filter)
-{
-  m_Filter = filter;
-
-  setupFilterInputWidget();
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-bool PipelineItem::insertChild(int position, PipelineItem* child)
-{
-  m_ChildItems.insert(position, child);
-  return true;
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-bool PipelineItem::insertChildren(int position, int count, int columns)
-{
-  if(position < 0 || position > m_ChildItems.size())
+  if(position < 0 || position > childCount())
   {
     return false;
   }
 
-  for(int row = 0; row < count; ++row)
-  {
-    QVector<QVariant> data(columns);
-    PipelineItem* item = new PipelineItem(data, this);
-    insertChild(position, item);
-  }
-
-  return true;
+  AbstractFilter::Pointer filter = dynamic_cast<PipelineFilterItem*>(child)->getFilter();
+  return m_TempPipeline->insert(position, filter);
 }
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-bool PipelineItem::insertColumns(int position, int columns)
+bool PipelineItem::insertChildren(int position, int count)
 {
-  if(position < 0 || position > m_ItemData.size())
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+AbstractPipelineItem* PipelineItem::child(int number) const
+{
+  if(number < 0 || number > m_FilterItems.count())
+  {
+    return nullptr;
+  }
+
+  AbstractFilter::Pointer filter = m_TempPipeline->getFilterContainer().at(number);
+  if(m_FilterItems.contains(filter))
+  {
+    return m_FilterItems[filter];
+  }
+  return nullptr;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+int PipelineItem::indexOf(AbstractPipelineItem* item) const
+{
+  PipelineFilterItem* filterItem = dynamic_cast<PipelineFilterItem*>(item);
+  if(nullptr == filterItem)
+  {
+    return -1;
+  }
+
+  return m_TempPipeline->indexOf(filterItem->getFilter());
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+QModelIndex PipelineItem::pipelineIndex() const
+{
+  return model()->index(childIndex(), 0);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+QModelIndex PipelineItem::firstFilterIndex() const
+{
+  if(childCount() > 0)
+  {
+    return model()->index(0, 0, pipelineIndex());
+  }
+  
+  return QModelIndex();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+QModelIndex PipelineItem::lastFilterIndex() const
+{
+  if(childCount() > 1)
+  {
+    return model()->index(childCount() - 1, 0, pipelineIndex());
+  }
+  
+  return firstFilterIndex();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool PipelineItem::insertFilter(int position, AbstractFilter::Pointer filter)
+{
+  if(nullptr == filter || false == m_TempPipeline->getFilterContainer().contains(filter))
+  {
+    return false;
+  }
+  if(m_TempPipeline->insert(position, filter))
+  {
+    m_FilterItems[filter] = new PipelineFilterItem(filter, this);
+    setupFilterInputWidget(filter);
+    return true;
+  }
+  
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool PipelineItem::insertFilters(int position, QVector<AbstractFilter::Pointer> filters)
+{
+  if(position < 0 || position > m_TempPipeline->size())
   {
     return false;
   }
 
-  for(int column = 0; column < columns; ++column)
+  for(AbstractFilter::Pointer filter : filters)
   {
-    m_ItemData.insert(position, QVariant());
+    insertFilter(position, filter);
+    position++;
   }
-
-  foreach(PipelineItem* child, m_ChildItems)
-  {
-    child->insertColumns(position, columns);
-  }
-
   return true;
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-PipelineItem* PipelineItem::parent()
-{
-  return m_ParentItem;
 }
 
 // -----------------------------------------------------------------------------
@@ -207,8 +546,14 @@ PipelineItem* PipelineItem::parent()
 // -----------------------------------------------------------------------------
 bool PipelineItem::removeChild(int position)
 {
-  m_ChildItems.removeAt(position);
-  return true;
+  PipelineFilterItem* item = dynamic_cast<PipelineFilterItem*>(child(position));
+  if(item && m_TempPipeline->erase(position))
+  {
+    delete item;
+    return true;
+  }
+
+  return false;
 }
 
 // -----------------------------------------------------------------------------
@@ -216,14 +561,22 @@ bool PipelineItem::removeChild(int position)
 // -----------------------------------------------------------------------------
 bool PipelineItem::removeChildren(int position, int count)
 {
-  if(position < 0 || position + count > m_ChildItems.size())
+  if(position < 0 || position + count > m_TempPipeline->size())
   {
     return false;
   }
 
   for(int row = 0; row < count; ++row)
   {
-    delete m_ChildItems.takeAt(position);
+    AbstractPipelineItem* item = dynamic_cast<PipelineFilterItem*>(child(position));
+    if(item && m_TempPipeline->erase(position))
+    {
+      delete item;
+    }
+    else
+    {
+      return false;
+    }
   }
 
   return true;
@@ -232,60 +585,149 @@ bool PipelineItem::removeChildren(int position, int count)
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-bool PipelineItem::removeColumns(int position, int columns)
+void PipelineItem::updateFilterInputWidgets()
 {
-  if(position < 0 || position + columns > m_ItemData.size())
+  for(FilterInputWidget* fiw : m_FilterInputWidgets.values())
   {
-    return false;
+    fiw->deleteLater();
   }
+  m_FilterInputWidgets.clear();
 
-  for(int column = 0; column < columns; ++column)
-  {
-    m_ItemData.remove(position);
-  }
-
-  foreach(PipelineItem* child, m_ChildItems)
-  {
-    child->removeColumns(position, columns);
-  }
-
-  return true;
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-bool PipelineItem::setData(int column, const QVariant& value)
-{
-  if(column < 0 || column >= m_ItemData.size())
-  {
-    return false;
-  }
-
-  m_ItemData[column] = value;
-  return true;
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-void PipelineItem::setParent(PipelineItem* parent)
-{
-  m_ParentItem = parent;
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-void PipelineItem::setupFilterInputWidget()
-{
   // Instantiate the filter input widget object
-  if(m_FilterInputWidget)
+  for(AbstractFilter::Pointer filter : *m_TempPipeline)
   {
-    m_FilterInputWidget->deleteLater();
+    setupFilterInputWidget(filter);
+  }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::setupFilterInputWidget(AbstractFilter::Pointer filter)
+{
+  m_FilterInputWidgets[filter] = new FilterInputWidget(filter, nullptr);
+  m_FilterInputWidgets[filter]->displayFilterParameters(filter);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+FilterInputWidget* PipelineItem::getFilterInputWidget(AbstractFilter::Pointer filter) const
+{
+  if(m_FilterInputWidgets.contains(filter))
+  {
+    return m_FilterInputWidgets[filter];
   }
 
-  m_FilterInputWidget = new FilterInputWidget(m_Filter, nullptr);
+  return nullptr;
+}
 
-  m_FilterInputWidget->displayFilterParameters(m_Filter);
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+FilterPipeline::FilterState PipelineItem::getFilterState(AbstractFilter::Pointer filter) const
+{
+  return m_TempPipeline->getFilterState(filter);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+QVariant PipelineItem::data(int role) const
+{
+  if(role == Qt::DisplayRole)
+  {
+    QString pipelineName = m_SavedPipeline->getName();
+    if(pipelineName.isEmpty())
+    {
+      return "Untitled";
+    }
+    else
+    {
+      return pipelineName;
+    }
+  }
+  else if(role == Qt::DecorationRole)
+  {
+    switch(m_TempPipeline->getErrorState())
+    {
+    case FilterPipeline::ErrorState::Ok:
+      return QColor(Qt::GlobalColor::green);
+    case FilterPipeline::ErrorState::Error:
+      return QColor(Qt::GlobalColor::red);
+    case FilterPipeline::ErrorState::Warning:
+      return QColor(Qt::GlobalColor::darkYellow);
+    }
+  }
+  else if(role == Qt::ToolTipRole)
+  {
+    return "";
+    //return m_SavedPipeline->filePath();
+  }
+  else if(role == PipelineModel::Roles::ErrorStateRole)
+  {
+    return static_cast<int>(m_TempPipeline->getErrorState());
+  }
+  else if(role == PipelineModel::Roles::PipelineStateRole)
+  {
+    return static_cast<int>(m_TempPipeline->getPipelineState());
+  }
+  else if(role == PipelineModel::Roles::ItemTypeRole)
+  {
+    return static_cast<int>(ItemType::Pipeline);
+  }
+  else if(role == PipelineModel::Roles::ItemTypeRole)
+  {
+    return static_cast<int>(getItemType());
+  }
+
+  return QVariant();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool PipelineItem::setData(int role, const QVariant& value)
+{
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+Qt::ItemFlags PipelineItem::flags() const
+{
+  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;// | Qt::ItemIsDropEnabled;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+QList<QObject*> PipelineItem::getPipelineMessageObservers() const
+{
+  return m_PipelineMessageObservers;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::addPipelineMessageObserver(QObject* observer)
+{
+  m_PipelineMessageObservers.push_back(observer);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::clearIssues()
+{
+  // TODO: clear pipeline issues and FilterStates
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::stdOutMessage(const QString& msg)
+{
+  m_StdOutMsg += msg + "\n";
 }

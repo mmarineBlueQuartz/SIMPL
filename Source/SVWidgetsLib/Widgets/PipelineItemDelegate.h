@@ -49,7 +49,7 @@ class SVWidgetsLib_EXPORT PipelineItemDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
 
-  public:    
+  public:
     explicit PipelineItemDelegate(SVPipelineView* view);
 
     ~PipelineItemDelegate() override;
@@ -59,6 +59,13 @@ class SVWidgetsLib_EXPORT PipelineItemDelegate : public QStyledItemDelegate
   protected:
     void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
     bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index) override;
+
+    virtual void paintBackground(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const;
+    virtual void paintFilterIndex(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const;
+    virtual void paintFilter(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const;
+    virtual void paintPipeline(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const;
+
+    virtual int itemHeight() const;
 
   private:
     enum class HoverItem : unsigned int

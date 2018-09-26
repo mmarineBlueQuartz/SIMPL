@@ -1,47 +1,49 @@
 /* ============================================================================
-* Copyright (c) 2017 BlueQuartz Software, LLC
-*
-* Redistribution and use in source and binary forms, with or without modification,
-* are permitted provided that the following conditions are met:
-*
-* Redistributions of source code must retain the above copyright notice, this
-* list of conditions and the following disclaimer.
-*
-* Redistributions in binary form must reproduce the above copyright notice, this
-* list of conditions and the following disclaimer in the documentation and/or
-* other materials provided with the distribution.
-*
-* Neither the name of BlueQuartz Software nor the names of its
-* contributors may be used to endorse or promote products derived from this software
-* without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
-* USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*
-*
-* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+ * Copyright (c) 2017 BlueQuartz Software, LLC
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ *
+ * Redistributions in binary form must reproduce the above copyright notice, this
+ * list of conditions and the following disclaimer in the documentation and/or
+ * other materials provided with the distribution.
+ *
+ * Neither the name of BlueQuartz Software nor the names of its
+ * contributors may be used to endorse or promote products derived from this software
+ * without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 #include "PipelineModel.h"
 
 #include <QtWidgets>
 
-#include "SIMPLib/FilterParameters/JsonFilterParametersReader.h"
+#include "SIMPLib/CoreFilters/DataContainerReader.h"
 #include "SIMPLib/FilterParameters/H5FilterParametersReader.h"
-#include "SIMPLib/FilterParameters/JsonFilterParametersWriter.h"
 #include "SIMPLib/FilterParameters/H5FilterParametersWriter.h"
+#include "SIMPLib/FilterParameters/JsonFilterParametersReader.h"
+#include "SIMPLib/FilterParameters/JsonFilterParametersWriter.h"
 
 #include "SVWidgetsLib/Core/SVWidgetsLibConstants.h"
-#include "SVWidgetsLib/Widgets/PipelineItem.h"
-#include "SVWidgetsLib/Widgets/PipelineFilterMimeData.h"
 #include "SVWidgetsLib/QtSupport/QtSSettings.h"
+#include "SVWidgetsLib/Widgets/PipelineFilterItem.h"
+#include "SVWidgetsLib/Widgets/PipelineFilterMimeData.h"
+#include "SVWidgetsLib/Widgets/PipelineItem.h"
 
 // -----------------------------------------------------------------------------
 //
@@ -50,9 +52,7 @@ PipelineModel::PipelineModel(QObject* parent)
 : QAbstractItemModel(parent)
 , m_MaxNumberOfPipelines(std::numeric_limits<int>::max())
 {
-  QVector<QVariant> vector;
-  vector.push_back("");
-  m_RootItem = new PipelineItem(vector);
+  m_RootItem = new PipelineRootItem(this);
 }
 
 // -----------------------------------------------------------------------------
@@ -61,24 +61,6 @@ PipelineModel::PipelineModel(QObject* parent)
 PipelineModel::~PipelineModel()
 {
   delete m_RootItem;
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-void PipelineModel::updateActivePipeline(const QModelIndex &pipelineIdx)
-{
-  emit clearIssuesTriggered();
-
-  setActivePipeline(m_ActivePipelineIndex, false);
-  setActivePipeline(pipelineIdx, true);
-
-  m_ActivePipelineIndex = pipelineIdx;
-
-  if (m_ActivePipelineIndex.isValid() == true)
-  {
-    emit preflightTriggered(m_ActivePipelineIndex, this);
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -99,188 +81,220 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
     return QVariant();
   }
 
-  PipelineItem* item = getItem(index);
+  AbstractPipelineItem* item = getItem(index);
+  return item->data(role);
+}
 
-  if (role == PipelineModel::Roles::WidgetStateRole)
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool PipelineModel::setData(const QModelIndex& index, const QVariant& value, int role)
+{
+  AbstractPipelineItem* item = getItem(index);
+  if(nullptr == item)
   {
-    return static_cast<int>(item->getWidgetState());
+    return false;
   }
-  else if (role == PipelineModel::Roles::ErrorStateRole)
+
+  return item->setData(role, value);
+#if 0
+  if(role == PipelineModel::Roles::WidgetStateRole)
   {
-    return static_cast<int>(item->getErrorState());
-  }
-  else if (role == PipelineModel::Roles::PipelineStateRole)
-  {
-    return static_cast<int>(item->getPipelineState());
-  }
-  else if (role == PipelineModel::Roles::ItemTypeRole)
-  {
-    return static_cast<int>(item->getItemType());
-  }
-  else if (role == PipelineModel::Roles::BorderSizeRole)
-  {
-    return item->getBorderSize();
-  }
-  else if (role == PipelineModel::Roles::HeightRole)
-  {
-    return item->getHeight();
-  }
-  else if (role == PipelineModel::Roles::WidthRole)
-  {
-    return item->getWidth();
-  }
-  else if (role == PipelineModel::Roles::XOffsetRole)
-  {
-    return item->getXOffset();
-  }
-  else if (role == PipelineModel::Roles::YOffsetRole)
-  {
-    return item->getYOffset();
-  }
-  else if (role == PipelineModel::Roles::ExpandedRole)
-  {
-    return item->getExpanded();
-  }
-  else if (role == PipelineModel::Roles::AnimationTypeRole)
-  {
-    return item->getCurrentAnimationType();
-  }
-  else if(role == Qt::DisplayRole)
-  {
-    return item->data(index.column());
-  }
-  else if(role == Qt::SizeHintRole)
-  {
-    return item->getSize();
-  }
-  else if (role == Qt::FontRole)
-  {
-    if (item->isActivePipeline())
+    bool ok = false;
+    int intValue = value.toInt(&ok);
+    if(ok == false)
     {
-      QFont font;
-      font.setBold(true);
-      return font;
+      return false;
     }
-    else
+
+    PipelineItem::WidgetState value = static_cast<PipelineItem::WidgetState>(intValue);
+    item->setWidgetState(value);
+  }
+  else if(role == PipelineModel::Roles::ErrorStateRole)
+  {
+    bool ok = false;
+    int intValue = value.toInt(&ok);
+    if(ok == false)
     {
-      return QVariant();
+      return false;
     }
+
+    PipelineItem::ErrorState value = static_cast<PipelineItem::ErrorState>(intValue);
+    item->setErrorState(value);
   }
-  else if(role == Qt::ForegroundRole)
+  else if(role == PipelineModel::Roles::PipelineStateRole)
   {
-    QColor fgColor = getForegroundColor(index);
-    return fgColor;
+    bool ok = false;
+    int intValue = value.toInt(&ok);
+    if(ok == false)
+    {
+      return false;
+    }
+
+    PipelineItem::PipelineState value = static_cast<PipelineItem::PipelineState>(intValue);
+    item->setPipelineState(value);
   }
-  else if(role == Qt::ToolTipRole)
+  else if(role == PipelineModel::Roles::ItemTypeRole)
   {
-    return QString();
+    bool ok = false;
+    int intValue = value.toInt(&ok);
+    if(ok == false)
+    {
+      return false;
+    }
+
+    PipelineItem::ItemType value = static_cast<PipelineItem::ItemType>(intValue);
+    item->setItemType(value);
+  }
+  else if(role == PipelineModel::Roles::BorderSizeRole)
+  {
+    bool ok = false;
+    int borderSize = value.toInt(&ok);
+    if(ok == false)
+    {
+      return false;
+    }
+
+    item->setBorderSize(borderSize);
+  }
+  else if(role == PipelineModel::Roles::HeightRole)
+  {
+    bool ok = false;
+    int height = value.toInt(&ok);
+    if(ok == false)
+    {
+      return false;
+    }
+
+    item->setHeight(height);
+  }
+  else if(role == PipelineModel::Roles::WidthRole)
+  {
+    bool ok = false;
+    int width = value.toInt(&ok);
+    if(ok == false)
+    {
+      return false;
+    }
+
+    item->setWidth(width);
+  }
+  else if(role == PipelineModel::Roles::XOffsetRole)
+  {
+    bool ok = false;
+    int offset = value.toInt(&ok);
+    if(ok == false)
+    {
+      return false;
+    }
+
+    item->setXOffset(offset);
+  }
+  else if(role == PipelineModel::Roles::YOffsetRole)
+  {
+    bool ok = false;
+    int offset = value.toInt(&ok);
+    if(ok == false)
+    {
+      return false;
+    }
+
+    item->setYOffset(offset);
+  }
+  else if(role == PipelineModel::Roles::AnimationTypeRole)
+  {
+    bool ok = false;
+    int animationInt = value.toInt(&ok);
+    if(ok == false)
+    {
+      return false;
+    }
+
+    PipelineItem::AnimationType animationType = static_cast<PipelineItem::AnimationType>(animationInt);
+    item->setCurrentAnimationType(animationType);
+  }
+  else if(role == PipelineModel::Roles::ExpandedRole)
+  {
+    int expanded = value.toBool();
+    item->setExpanded(expanded);
   }
   else if(role == Qt::DecorationRole)
   {
-    QModelIndex nameIndex = this->index(index.row(), PipelineItem::Contents, index.parent());
-    if(nameIndex == index)
-    {
-      PipelineItem* item = getItem(index);
-      return item->getIcon();
-    }
-    else
-    {
-      return QVariant();
-    }
+    item->setIcon(value.value<QIcon>());
+  }
+  else if(role == Qt::ToolTipRole)
+  {
+    item->setItemTooltip(value.toString());
+  }
+  else if(role == Qt::DisplayRole)
+  {
+    item->setData(index.column(), value);
+  }
+  else if(role == Qt::SizeHintRole)
+  {
+    item->setSize(value.toSize());
+  }
+  else
+  {
+    return false;
   }
 
-  return QVariant();
+  emit dataChanged(index, index);
+
+  return true;
+#endif
 }
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-AbstractFilter::Pointer PipelineModel::filter(const QModelIndex &index) const
+AbstractFilter::Pointer PipelineModel::filter(const QModelIndex& index) const
 {
   if(!index.isValid())
   {
     return AbstractFilter::NullPointer();
   }
 
-  PipelineItem* item = getItem(index);
-  if (item == nullptr)
+  AbstractPipelineItem* item = getItem(index);
+  PipelineFilterItem* filterItem = dynamic_cast<PipelineFilterItem*>(item);
+  if(filterItem == nullptr)
   {
     return AbstractFilter::NullPointer();
   }
 
-  return item->getFilter();
+  return filterItem->getFilter();
 }
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void PipelineModel::setFilter(const QModelIndex &index, AbstractFilter::Pointer filter)
+void PipelineModel::setFilter(const QModelIndex& index, AbstractFilter::Pointer filter)
 {
   if(!index.isValid())
   {
     return;
   }
 
-  PipelineItem* item = getItem(index);
-  if (item == nullptr)
+  AbstractPipelineItem* item = getItem(index);
+  PipelineFilterItem* filterItem = dynamic_cast<PipelineFilterItem*>(item);
+  if(filterItem == nullptr)
   {
     return;
   }
 
-  item->setFilter(filter);
-
+  filterItem->setFilter(filter);
   emit dataChanged(index, index);
 }
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-QString PipelineModel::dropIndicatorText(const QModelIndex &index) const
+QModelIndex PipelineModel::indexOfFilter(AbstractFilter* filter, const QModelIndex& parent)
 {
-  if(!index.isValid())
-  {
-    return QString();
-  }
-
-  PipelineItem* item = getItem(index);
-  if (item == nullptr)
-  {
-    return QString();
-  }
-
-  return item->getDropIndicatorText();
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-void PipelineModel::setDropIndicatorText(const QModelIndex &index, const QString &text)
-{
-  if(!index.isValid())
-  {
-    return;
-  }
-
-  PipelineItem* item = getItem(index);
-  if (item == nullptr)
-  {
-    return;
-  }
-
-  item->setDropIndicatorText(text);
-
-  emit dataChanged(index, index);
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-QModelIndex PipelineModel::indexOfFilter(AbstractFilter* filter, const QModelIndex &parent)
-{
-  for (int i = 0; i < rowCount(parent); i++)
+  for(int i = 0; i < rowCount(parent); i++)
   {
     QModelIndex childIndex = index(i, PipelineItem::Contents, parent);
-    if (this->filter(childIndex).get() == filter)
+    if(this->filter(childIndex).get() == filter)
     {
       return childIndex;
     }
@@ -292,37 +306,177 @@ QModelIndex PipelineModel::indexOfFilter(AbstractFilter* filter, const QModelInd
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-QModelIndex PipelineModel::getActivePipelineIndex()
+FilterPipeline::Pointer PipelineModel::pipeline(const QModelIndex& index) const
 {
-  return m_ActivePipelineIndex;
+  if(!index.isValid())
+  {
+    return FilterPipeline::NullPointer();
+  }
+
+  AbstractPipelineItem* item = getItem(index);
+  PipelineItem* pipelineItem = dynamic_cast<PipelineItem*>(item);
+  if(nullptr == pipelineItem)
+  {
+    return FilterPipeline::NullPointer();
+  }
+
+  return pipelineItem->getCurrentPipeline();
 }
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void PipelineModel::setActivePipeline(const QModelIndex &index, bool value)
+QModelIndex PipelineModel::indexOfPipeline(FilterPipeline::Pointer pipeline, const QModelIndex& parent)
 {
-  PipelineItem* item = getItem(index);
-  item->setActivePipeline(value);
-  
-  if (value)
+  for(int i = 0; i < rowCount(parent); i++)
   {
-    m_ActivePipelineIndex = index;
+    QModelIndex childIndex = index(i, PipelineItem::Contents, parent);
+    if(this->pipeline(childIndex).get() == pipeline.get())
+    {
+      return childIndex;
+    }
+  }
+
+  return QModelIndex();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+int PipelineModel::openPipeline(const QString& filePath, int insertIndex)
+{
+  QFileInfo fi(filePath);
+  if(fi.exists() == false)
+  {
+    QMessageBox::warning(nullptr, QString::fromLatin1("Pipeline Read Error"), QString::fromLatin1("There was an error opening the specified pipeline file. The pipeline file does not exist."));
+    return -1;
+  }
+
+  QString ext = fi.suffix();
+  QString name = fi.fileName();
+  QString baseName = fi.baseName();
+
+  if(ext == "dream3d")
+  {
+#if 0
+    QtSFileDragMessageBox* msgBox = new QtSFileDragMessageBox(this);
+    msgBox->exec();
+    msgBox->deleteLater();
+
+    if(msgBox->cancelled())
+    {
+      return 0;
+    }
+    else if(msgBox->didPressOkBtn() == true)
+    {
+      if(msgBox->isExtractPipelineBtnChecked() == false)
+#endif
+    {
+      DataContainerReader::Pointer reader = DataContainerReader::New();
+      reader->setInputFile(filePath);
+
+      FilterPipeline::Pointer pipeline = FilterPipeline::New();
+      pipeline->pushBack(reader);
+      addPipeline(pipeline, insertIndex);
+      return 1;
+    }
+    //}
+  }
+
+  // Read the pipeline from the file
+  FilterPipeline::Pointer pipeline = readPipelineFromFile(filePath);
+  // Check that a valid extension was read...
+  if(pipeline == FilterPipeline::NullPointer())
+  {
+    emit statusMessageGenerated(tr("The pipeline was not read correctly from file '%1'. '%2' is an unsupported file extension.").arg(name).arg(ext));
+    emit standardOutputMessageGenerated(tr("The pipeline was not read correctly from file '%1'. '%2' is an unsupported file extension.").arg(name).arg(ext));
+    return -1;
+  }
+  PipelineItem* item = m_RootItem->insertPipeline(insertIndex, pipeline->deepCopy());
+  // Notify user of successful read
+  emit statusMessageGenerated(tr("Opened \"%1\" Pipeline").arg(baseName));
+  item->stdOutMessage(tr("Opened \"%1\" Pipeline").arg(baseName));
+
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+FilterPipeline::Pointer PipelineModel::readPipelineFromFile(const QString& filePath)
+{
+  QFileInfo fi(filePath);
+  QString ext = fi.suffix();
+
+  FilterPipeline::Pointer pipeline;
+  if(ext == "dream3d")
+  {
+    H5FilterParametersReader::Pointer dream3dReader = H5FilterParametersReader::New();
+    pipeline = dream3dReader->readPipelineFromFile(filePath);
+  }
+  else if(ext == "json")
+  {
+    JsonFilterParametersReader::Pointer jsonReader = JsonFilterParametersReader::New();
+    pipeline = jsonReader->readPipelineFromFile(filePath);
   }
   else
   {
-    m_ActivePipelineIndex = QModelIndex();
+    pipeline = FilterPipeline::NullPointer();
   }
 
-  emit dataChanged(index, index);
+  return pipeline;
 }
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void PipelineModel::clearActivePipeline()
+int PipelineModel::save(const QModelIndex& index)
 {
+  PipelineItem* pipelineItem = getPipelineItem(index);
+  if(pipelineItem)
+  {
+    return pipelineItem->save();
+  }
 
+  return -1;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+int PipelineModel::saveAs(const QModelIndex& index, const QString& outputPath)
+{
+  PipelineItem* pipelineItem = getPipelineItem(index);
+  if(pipelineItem)
+  {
+    return pipelineItem->saveAs(outputPath);
+  }
+
+  return -1;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineModel::executePipeline(const QModelIndex& index)
+{
+  PipelineItem* pipelineItem = getPipelineItem(index);
+  if(pipelineItem)
+  {
+    pipelineItem->executePipeline();
+  }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineModel::cancelPipeline(const QModelIndex& index)
+{
+  PipelineItem* pipelineItem = getPipelineItem(index);
+  if(pipelineItem)
+  {
+    pipelineItem->cancelPipeline();
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -330,12 +484,8 @@ void PipelineModel::clearActivePipeline()
 // -----------------------------------------------------------------------------
 Qt::ItemFlags PipelineModel::flags(const QModelIndex& index) const
 {
-  if (!index.isValid() || index.model() != this)
-  {
-    return Qt::ItemIsDropEnabled;
-  }
-
-  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsDragEnabled;
+  AbstractPipelineItem* item = getItem(index);
+  return item->flags();
 }
 
 // -----------------------------------------------------------------------------
@@ -354,25 +504,23 @@ QStringList PipelineModel::mimeTypes() const
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-bool PipelineModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
+bool PipelineModel::canDropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) const
 {
   Q_UNUSED(row);
   Q_UNUSED(parent);
 
-  if (action == Qt::IgnoreAction)
+  if(action == Qt::IgnoreAction)
   {
     return false;
   }
 
-  if (!data->hasFormat(SIMPLView::DragAndDrop::FilterPipelineItem)
-      && !data->hasFormat(SIMPLView::DragAndDrop::FilterListItem)
-      && !data->hasFormat(SIMPLView::DragAndDrop::BookmarkItem)
-      && !data->hasFormat(SIMPLView::DragAndDrop::Url))
+  if(!data->hasFormat(SIMPLView::DragAndDrop::FilterPipelineItem) && !data->hasFormat(SIMPLView::DragAndDrop::FilterListItem) && !data->hasFormat(SIMPLView::DragAndDrop::BookmarkItem) &&
+     !data->hasFormat(SIMPLView::DragAndDrop::Url))
   {
     return false;
   }
 
-  if (column > 0)
+  if(column > 0)
   {
     return false;
   }
@@ -383,7 +531,7 @@ bool PipelineModel::canDropMimeData(const QMimeData *data, Qt::DropAction action
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-PipelineItem* PipelineModel::getItem(const QModelIndex& index) const
+AbstractPipelineItem* PipelineModel::getItem(const QModelIndex& index) const
 {
   if(index.isValid())
   {
@@ -396,18 +544,28 @@ PipelineItem* PipelineModel::getItem(const QModelIndex& index) const
   return m_RootItem;
 }
 
-//// -----------------------------------------------------------------------------
-////
-//// -----------------------------------------------------------------------------
-//QVariant PipelineModel::headerData(int section, Qt::Orientation orientation, int role) const
-//{
-//  if(orientation == Qt::Horizontal && role == Qt::DisplayRole)
-//  {
-//    return m_RootItem->data(section);
-//  }
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+PipelineItem* PipelineModel::getPipelineItem(const QModelIndex& index) const
+{
+  if(!index.isValid())
+  {
+    return nullptr;
+  }
 
-//  return QVariant();
-//}
+  AbstractPipelineItem* item = getItem(index);
+  if(dynamic_cast<PipelineItem*>(item))
+  {
+    return dynamic_cast<PipelineItem*>(item);
+  }
+  else if(dynamic_cast<PipelineFilterItem*>(item))
+  {
+    return dynamic_cast<PipelineFilterItem*>(item)->parentPipeline();
+  }
+
+  return nullptr;
+}
 
 // -----------------------------------------------------------------------------
 //
@@ -419,9 +577,9 @@ QModelIndex PipelineModel::index(int row, int column, const QModelIndex& parent)
     return QModelIndex();
   }
 
-  PipelineItem* parentItem = getItem(parent);
+  AbstractPipelineItem* parentItem = getItem(parent);
 
-  PipelineItem* childItem = parentItem->child(row);
+  AbstractPipelineItem* childItem = parentItem->child(row);
   if(childItem)
   {
     return createIndex(row, column, childItem);
@@ -437,11 +595,11 @@ QModelIndex PipelineModel::index(int row, int column, const QModelIndex& parent)
 // -----------------------------------------------------------------------------
 bool PipelineModel::insertRows(int position, int rows, const QModelIndex& parent)
 {
-  PipelineItem* parentItem = getItem(parent);
+  AbstractPipelineItem* parentItem = getItem(parent);
   bool success;
 
   beginInsertRows(parent, position, position + rows - 1);
-  success = parentItem->insertChildren(position, rows, m_RootItem->columnCount());
+  success = parentItem->insertChildren(position, rows);
   endInsertRows();
 
   return success;
@@ -457,7 +615,7 @@ bool PipelineModel::removeRows(int position, int rows, const QModelIndex& parent
     return false;
   }
 
-  PipelineItem* parentItem = getItem(parent);
+  AbstractPipelineItem* parentItem = getItem(parent);
   bool success = true;
 
   beginRemoveRows(parent, position, position + rows - 1);
@@ -474,13 +632,13 @@ bool PipelineModel::moveRows(const QModelIndex& sourceParent, int sourceRow, int
 {
   beginMoveRows(sourceParent, sourceRow, sourceRow + count - 1, destinationParent, destinationChild);
 
-  PipelineItem* srcParentItem = getItem(sourceParent);
-  PipelineItem* destParentItem = getItem(destinationParent);
+  AbstractPipelineItem* srcParentItem = getItem(sourceParent);
+  AbstractPipelineItem* destParentItem = getItem(destinationParent);
 
   for(int i = sourceRow; i < sourceRow + count; i++)
   {
     QModelIndex srcIndex = index(i, PipelineItem::Contents, sourceParent);
-    PipelineItem* srcItem = getItem(srcIndex);
+    AbstractPipelineItem* srcItem = getItem(srcIndex);
 
     destParentItem->insertChild(destinationChild, srcItem);
     srcItem->setParent(destParentItem);
@@ -502,15 +660,15 @@ QModelIndex PipelineModel::parent(const QModelIndex& index) const
     return QModelIndex();
   }
 
-  PipelineItem* childItem = getItem(index);
-  PipelineItem* parentItem = childItem->parent();
+  AbstractPipelineItem* childItem = getItem(index);
+  AbstractPipelineItem* parentItem = childItem->parent();
 
   if(parentItem == m_RootItem)
   {
     return QModelIndex();
   }
 
-  return createIndex(parentItem->childNumber(), 0, parentItem);
+  return createIndex(parentItem->childIndex(), 0, parentItem);
 }
 
 // -----------------------------------------------------------------------------
@@ -518,162 +676,8 @@ QModelIndex PipelineModel::parent(const QModelIndex& index) const
 // -----------------------------------------------------------------------------
 int PipelineModel::rowCount(const QModelIndex& parent) const
 {
-  PipelineItem* parentItem = getItem(parent);
-
+  AbstractPipelineItem* parentItem = getItem(parent);
   return parentItem->childCount();
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-bool PipelineModel::setData(const QModelIndex& index, const QVariant& value, int role)
-{
-  PipelineItem* item = getItem(index);
-
-  if (role == PipelineModel::Roles::WidgetStateRole)
-  {
-    bool ok = false;
-    int intValue = value.toInt(&ok);
-    if (ok == false)
-    {
-      return false;
-    }
-
-    PipelineItem::WidgetState value = static_cast<PipelineItem::WidgetState>(intValue);
-    item->setWidgetState(value);
-  }
-  else if (role == PipelineModel::Roles::ErrorStateRole)
-  {
-    bool ok = false;
-    int intValue = value.toInt(&ok);
-    if (ok == false)
-    {
-      return false;
-    }
-
-    PipelineItem::ErrorState value = static_cast<PipelineItem::ErrorState>(intValue);
-    item->setErrorState(value);
-  }
-  else if (role == PipelineModel::Roles::PipelineStateRole)
-  {
-    bool ok = false;
-    int intValue = value.toInt(&ok);
-    if (ok == false)
-    {
-      return false;
-    }
-
-    PipelineItem::PipelineState value = static_cast<PipelineItem::PipelineState>(intValue);
-    item->setPipelineState(value);
-  }
-  else if (role == PipelineModel::Roles::ItemTypeRole)
-  {
-    bool ok = false;
-    int intValue = value.toInt(&ok);
-    if (ok == false)
-    {
-      return false;
-    }
-
-    PipelineItem::ItemType value = static_cast<PipelineItem::ItemType>(intValue);
-    item->setItemType(value);
-  }
-  else if (role == PipelineModel::Roles::BorderSizeRole)
-  {
-    bool ok = false;
-    int borderSize = value.toInt(&ok);
-    if (ok == false)
-    {
-      return false;
-    }
-
-    item->setBorderSize(borderSize);
-  }
-  else if (role == PipelineModel::Roles::HeightRole)
-  {
-    bool ok = false;
-    int height = value.toInt(&ok);
-    if (ok == false)
-    {
-      return false;
-    }
-
-    item->setHeight(height);
-  }
-  else if (role == PipelineModel::Roles::WidthRole)
-  {
-    bool ok = false;
-    int width = value.toInt(&ok);
-    if (ok == false)
-    {
-      return false;
-    }
-
-    item->setWidth(width);
-  }
-  else if (role == PipelineModel::Roles::XOffsetRole)
-  {
-    bool ok = false;
-    int offset = value.toInt(&ok);
-    if (ok == false)
-    {
-      return false;
-    }
-
-    item->setXOffset(offset);
-  }
-  else if (role == PipelineModel::Roles::YOffsetRole)
-  {
-    bool ok = false;
-    int offset = value.toInt(&ok);
-    if (ok == false)
-    {
-      return false;
-    }
-
-    item->setYOffset(offset);
-  }
-  else if (role == PipelineModel::Roles::AnimationTypeRole)
-  {
-    bool ok = false;
-    int animationInt = value.toInt(&ok);
-    if (ok == false)
-    {
-      return false;
-    }
-
-    PipelineItem::AnimationType animationType = static_cast<PipelineItem::AnimationType>(animationInt);
-    item->setCurrentAnimationType(animationType);
-  }
-  else if (role == PipelineModel::Roles::ExpandedRole)
-  {
-    int expanded = value.toBool();
-    item->setExpanded(expanded);
-  }
-  else if(role == Qt::DecorationRole)
-  {
-    item->setIcon(value.value<QIcon>());
-  }
-  else if(role == Qt::ToolTipRole)
-  {
-    item->setItemTooltip(value.toString());
-  }
-  else if (role == Qt::DisplayRole)
-  {
-    item->setData(index.column(), value);
-  }
-  else if (role == Qt::SizeHintRole)
-  {
-    item->setSize(value.toSize());
-  }
-  else
-  {
-    return false;
-  }
-
-  emit dataChanged(index, index);
-
-  return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -717,36 +721,38 @@ int PipelineModel::getMaxFilterCount() const
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-bool PipelineModel::isPipelineSaved(const QModelIndex &index)
+bool PipelineModel::isPipelineSaved(const QModelIndex& index)
 {
-  PipelineItem* item = getItem(index);
-  return item->isPipelineSaved();
+  AbstractPipelineItem* item = getItem(index);
+  if(dynamic_cast<PipelineItem*>(item))
+  {
+    return false == dynamic_cast<PipelineItem*>(item)->pipelineHasChanges();
+  }
+  else if(dynamic_cast<PipelineFilterItem*>(item))
+  {
+    return false == dynamic_cast<PipelineFilterItem*>(item)->parentPipeline()->pipelineHasChanges();
+  }
+
+  return true;
 }
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void PipelineModel::setPipelineSaved(const QModelIndex &index, bool saved)
+FilterInputWidget* PipelineModel::filterInputWidget(const QModelIndex& index)
 {
-  PipelineItem* item = getItem(index);
-  item->setPipelineSaved(saved);
-
-  emit dataChanged(index, index);
+  AbstractPipelineItem* item = getItem(index);
+  if(dynamic_cast<PipelineFilterItem*>(item))
+  {
+    return dynamic_cast<PipelineFilterItem*>(item)->getFilterInputWidget();
+  }
+  return nullptr;
 }
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-FilterInputWidget* PipelineModel::filterInputWidget(const QModelIndex &index)
-{
-  PipelineItem* item = getItem(index);
-  return item->getFilterInputWidget();
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-PipelineItem* PipelineModel::getRootItem()
+PipelineRootItem* PipelineModel::getRootItem()
 {
   return m_RootItem;
 }
@@ -766,66 +772,41 @@ bool PipelineModel::isEmpty()
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-QColor PipelineModel::getForegroundColor(const QModelIndex &index) const
+void PipelineModel::appendPipeline(FilterPipeline::Pointer pipeline)
 {
-  if (index.isValid() == false)
-  {
-    return QColor();
-  }
+  m_RootItem->insertPipeline(m_RootItem->childCount(), pipeline);
+}
 
-  PipelineItem* item = getItem(index);
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool PipelineModel::addPipeline(FilterPipeline::Pointer pipeline, int insertIndex)
+{
+  return nullptr != m_RootItem->insertPipeline(insertIndex, pipeline);
+}
 
-  PipelineItem::WidgetState wState = item->getWidgetState();
-  PipelineItem::PipelineState pState = item->getPipelineState();
-  PipelineItem::ErrorState eState = item->getErrorState();
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineModel::connectPipelineItem(PipelineItem* item)
+{
+  connect(item, &PipelineItem::filterAdded, [=](int index) {
+    beginInsertRows(item->pipelineIndex(), index, index);
+    endInsertRows();
+  });
 
-  QColor fgColor;
+  connect(item, &PipelineItem::filterRemoved, [=](int index) {
+    beginRemoveRows(item->pipelineIndex(), index, index);
+    endRemoveRows();
+  });
 
-  switch(wState)
-  {
-  case PipelineItem::WidgetState::Ready:
-    fgColor = QColor();
-    break;
-  case PipelineItem::WidgetState::Executing:
-    fgColor = QColor(6, 140, 190);
-    break;
-  case PipelineItem::WidgetState::Completed:
-    fgColor = QColor(6, 118, 6);
-    break;
-  case PipelineItem::WidgetState::Disabled:
-    fgColor = QColor(96, 96, 96);
-    break;
-  }
+  connect(item, &PipelineItem::pipelineUpdated, [=] {
+    emit dataChanged(item->pipelineIndex(), item->pipelineIndex());
+    emit dataChanged(item->firstFilterIndex(), item->lastFilterIndex());
+  });
 
-  // Do not change the background color if the widget is disabled.
-  if(wState != PipelineItem::WidgetState::Disabled)
-  {
-    switch(pState)
-    {
-    case PipelineItem::PipelineState::Running:
-      fgColor = QColor(190, 190, 190);
-      break;
-    case PipelineItem::PipelineState::Stopped:
-      fgColor = QColor(0, 0, 0);
-      break;
-    case PipelineItem::PipelineState::Paused:
-      fgColor = QColor(0, 0, 0);
-      break;
-    }
-  }
+  connect(item, &PipelineItem::statusMessage, this, &PipelineModel::statusMessageGenerated);
 
-  switch(eState)
-  {
-  case PipelineItem::ErrorState::Ok:
-
-    break;
-  case PipelineItem::ErrorState::Error:
-    fgColor = QColor(179, 2, 5);
-    break;
-  case PipelineItem::ErrorState::Warning:
-    fgColor = QColor(215, 197, 1);
-    break;
-  }
-
-  return fgColor;
+  emit dataChanged(item->pipelineIndex(), item->pipelineIndex());
+  emit dataChanged(item->firstFilterIndex(), item->lastFilterIndex());
 }
