@@ -144,12 +144,6 @@ public:
   FilterPipeline::Pointer getFilterPipelineCopy();
 
   /**
-   * @brief Returns the pipeline name
-   * @return
-   */
-  //QString getPipelineName();
-
-  /**
    * @brief writePipeline
    * @param outputPath
    * @return
@@ -225,12 +219,6 @@ public:
   QPixmap getHighDPIDeleteBtnHoveredPixmap(bool highlighted = false);
 
 public slots:
-  /**
-   * @brief setPipelineName
-   * @param name
-   */
-  //void setPipelineName(QString name);
-
   /**
    * @brief Adds a filter with the specified filterClassName to the current model
    * @param filterClassName
@@ -501,8 +489,9 @@ private:
   /**
    * @brief requestPipelineContextMenu
    * @param pos
+   * @param index
    */
-  void requestPipelineItemContextMenu(const QPoint& pos);
+  void requestPipelineItemContextMenu(const QPoint& pos, const QModelIndex& index);
 
   /**
    * @brief requestSinglePipelineContextMenu

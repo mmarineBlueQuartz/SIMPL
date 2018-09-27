@@ -679,6 +679,7 @@ int FilterPipeline::preflightPipeline()
 
   setErrorCondition(0);
   int preflightError = 0;
+  int preflightWarning = 0;
   m_ErrorState = ErrorState::Ok;
 
   DataArrayPath::RenameContainer renamedPaths;
@@ -709,13 +710,14 @@ int FilterPipeline::preflightPipeline()
 
       (*filter)->setCancel(false); // Reset the cancel flag
       preflightError |= (*filter)->getErrorCondition();
+      preflightWarning |= (*filter)->getWarningCondition();
       (*filter)->setDataContainerArray(dca->deepCopy(false));
       // Update ErrorState
-      if((*filter)->getErrorCondition() < 0)
+      if(preflightError < 0)
       {
         m_ErrorState = ErrorState::Error;
       }
-      else if(ErrorState::Error != m_ErrorState && (*filter)->getWarningCondition() < 0)
+      else if(preflightWarning < 0)
       {
         m_ErrorState = ErrorState::Warning;
       }
@@ -861,7 +863,7 @@ DataContainerArray::Pointer FilterPipeline::execute()
         m_PipelineState = PipelineState::Ready;
         return m_Dca;
       }
-      else if(warning < 0)
+      else if(warning < 0 && m_ErrorState != ErrorState::Error)
       {
         m_ErrorState = ErrorState::Warning;
       }

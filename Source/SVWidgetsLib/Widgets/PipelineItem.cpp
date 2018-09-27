@@ -260,16 +260,8 @@ bool PipelineItem::pipelineHasChanges() const
 void PipelineItem::preflightPipeline()
 {
   clearIssues();
-
-  // Preflight the pipeline
-  qDebug() << "Preflight the Pipeline ... ";
-  int err = m_TempPipeline->preflightPipeline();
-  if(err < 0)
-  {
-    // TODO: Set FilterStates for errors and warnings
-  }
-
-  qDebug() << "----------- SVPipelineView::preflightPipeline End --------------";
+  m_TempPipeline->preflightPipeline();
+  emit pipelineUpdated();
 }
 
 // -----------------------------------------------------------------------------
@@ -293,6 +285,7 @@ void PipelineItem::executePipeline()
   m_WorkerThread->setObjectName("Pipeline Thread");
 
   emit stdOutMessage("<b>Preflight Pipeline.....</b>");
+  qDebug() << "Preflight Pipeline...";
   // Give the pipeline one last chance to preflight and get all the latest values from the GUI
   int err = m_TempPipeline->preflightPipeline();
   if(err < 0)
@@ -325,11 +318,12 @@ void PipelineItem::executePipeline()
   m_PipelineConnection = connect(m_TempPipeline.get(), &FilterPipeline::pipelineFinished, [=]() { pipelineFinished(); });
 
   // When the QThread finishes, tell this object that it has finished.
-  connect(m_WorkerThread, SIGNAL(finished()), this, SLOT(endPipelineThread()));
+  connect(m_WorkerThread, &QThread::finished, this, &PipelineItem::endPipelineThread);
 
   m_WorkerThread->start();
   emit stdOutMessage("");
   emit stdOutMessage("<b>*************** PIPELINE STARTED ***************</b>");
+  qDebug() << "Pipeline Started...";
 }
 
 // -----------------------------------------------------------------------------
@@ -351,6 +345,7 @@ void PipelineItem::pipelineFinished()
     stdOutMessage("<b>*************** PIPELINE FINISHED ***************</b>");
   }
   stdOutMessage("");
+  qDebug() << "Pipeline Finished...";
 
   // Put back the DataContainerArray for each filter at the conclusion of running
   // the pipeline. this keeps the data browser current and up to date.
@@ -385,6 +380,7 @@ void PipelineItem::endPipelineThread()
     }
   }
   m_TempPipeline->clearDataContainerArray();
+  qDebug() << "endPipelineThread()";
 
   emit pipelineFinished();
 }
@@ -653,6 +649,7 @@ void PipelineItem::addFilter(int index, AbstractFilter::Pointer filter)
   PipelineFilterItem* filterItem = new PipelineFilterItem(filter, this);
   m_FilterItems[filter] = filterItem;
   setupFilterInputWidget(filter);
+  connect(filterItem, &PipelineFilterItem::modified, this, &PipelineItem::pipelineUpdated);
   emit filterAdded(index, filter);
 }
 
@@ -693,13 +690,10 @@ QVariant PipelineItem::data(int role) const
     {
     case FilterPipeline::ErrorState::Ok:
       return QIcon(":/SIMPL/icons/images/bullet_ball_green.png");
-      //return QColor(Qt::GlobalColor::green);
     case FilterPipeline::ErrorState::Error:
       return QIcon(":/SIMPL/icons/images/bullet_ball_red.png");
-      //return QColor(Qt::GlobalColor::red);
     case FilterPipeline::ErrorState::Warning:
       return QIcon(":/SIMPL/icons/images/warning.png");
-      //return QColor(Qt::GlobalColor::darkYellow);
     }
   }
   else if(role == Qt::ToolTipRole)
@@ -770,6 +764,8 @@ void PipelineItem::clearIssues()
     item->clearMessages();
     model()->updateData(item);
   }
+
+  emit modified();
 }
 
 // -----------------------------------------------------------------------------

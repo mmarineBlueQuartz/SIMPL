@@ -49,6 +49,8 @@ class PipelineModel;
 
 class SVWidgetsLib_EXPORT AbstractPipelineItem : public QObject
 {
+  Q_OBJECT
+
 public:
   enum class ItemType : unsigned int
   {
@@ -88,6 +90,9 @@ public:
   virtual QVariant data(int role) const = 0;
   virtual bool setData(int role, const QVariant& value) = 0;
   virtual Qt::ItemFlags flags() const = 0;
+
+signals:
+  void modified();
 
 protected:
   virtual PipelineModel* model() const;

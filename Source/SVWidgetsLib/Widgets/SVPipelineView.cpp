@@ -676,8 +676,6 @@ void SVPipelineView::clearPipeline()
 
   emit clearDataStructureWidgetTriggered();
 
-  //m_TempPipeline = FilterPipeline::New();
-  //m_SavedPipeline = FilterPipeline::New();
   m_PipelineInFlight = nullptr;
 }
 
@@ -1452,16 +1450,6 @@ int SVPipelineView::openPipeline(const QString& filePath, int insertIndex)
   emit statusMessage(tr("Opened \"%1\" Pipeline").arg(baseName));
   emit stdOutMessage(tr("Opened \"%1\" Pipeline").arg(baseName));
 
-  //QList<AbstractFilter::Pointer> pipelineFilters = pipeline->getFilterContainer();
-  //std::vector<AbstractFilter::Pointer> filters;
-  //for(int i = 0; i < pipelineFilters.size(); i++)
-  //{
-  //  filters.push_back(pipelineFilters[i]);
-  //}
-
-  //// Populate the pipeline view
-  //addFilters(filters, insertIndex);
-
   emit pipelineFilePathUpdated(filePath);
   emit pipelineChanged();
 
@@ -1546,7 +1534,7 @@ void SVPipelineView::requestContextMenu(const QPoint& pos)
     requestFilterItemContextMenu(mapped, index);
     break;
   case AbstractPipelineItem::ItemType::Pipeline:
-    requestPipelineItemContextMenu(mapped);
+    requestPipelineItemContextMenu(mapped, index);
     break;
   default:
     requestDefaultContextMenu(mapped);
@@ -1693,9 +1681,17 @@ void SVPipelineView::requestFilterItemContextMenu(const QPoint& pos, const QMode
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void SVPipelineView::requestPipelineItemContextMenu(const QPoint& pos)
+void SVPipelineView::requestPipelineItemContextMenu(const QPoint& pos, const QModelIndex& index)
 {
   QMenu menu;
+
+  // Execute Pipeline
+  QAction* actionExecutePipeline = new QAction("Execute Pipeline");
+  connect(actionExecutePipeline, &QAction::triggered, [this, index] {
+    getPipelineModel()->executePipeline(index);
+  });
+  menu.addAction(actionExecutePipeline);
+  menu.addSeparator();
 
   menu.addAction(m_ActionPaste);
 
@@ -1827,10 +1823,10 @@ void SVPipelineView::setModel(QAbstractItemModel* model)
   if(pipelineModel != nullptr)
   {
     connect(pipelineModel, &PipelineModel::rowsInserted, this, [=] { m_ActionClearPipeline->setEnabled(true); });
-
     connect(pipelineModel, &PipelineModel::rowsRemoved, this, [=] { m_ActionClearPipeline->setEnabled(model->rowCount() > 0); });
-
     connect(pipelineModel, &PipelineModel::rowsMoved, this, [=] { m_ActionClearPipeline->setEnabled(model->rowCount() > 0); });
+    connect(pipelineModel, &PipelineModel::pipelineOutput, this, &SVPipelineView::pipelineOutput);
+    connect(pipelineModel, &PipelineModel::pipelineAdded, this, &SVPipelineView::expand);
   }
 
   connect(selectionModel(), &QItemSelectionModel::selectionChanged, [=](const QItemSelection& selected, const QItemSelection& deselected) {

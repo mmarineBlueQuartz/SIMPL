@@ -208,6 +208,7 @@ PipelineItem* PipelineRootItem::insertPipeline(int position, FilterPipeline::Poi
   PipelineItem* pipelineItem = new PipelineItem(pipeline, this);
   m_PipelineItems.insert(position, pipelineItem);
   model()->connectPipelineItem(pipelineItem);
+  emit modified();
   return pipelineItem;
 }
 

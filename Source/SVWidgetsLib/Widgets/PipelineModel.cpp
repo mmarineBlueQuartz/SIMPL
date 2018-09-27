@@ -53,6 +53,7 @@ PipelineModel::PipelineModel(QObject* parent)
 , m_MaxNumberOfPipelines(std::numeric_limits<int>::max())
 {
   m_RootItem = new PipelineRootItem(this);
+  connectItem(m_RootItem);
 }
 
 // -----------------------------------------------------------------------------
@@ -97,152 +98,6 @@ bool PipelineModel::setData(const QModelIndex& index, const QVariant& value, int
   }
 
   return item->setData(role, value);
-#if 0
-  if(role == PipelineModel::Roles::WidgetStateRole)
-  {
-    bool ok = false;
-    int intValue = value.toInt(&ok);
-    if(ok == false)
-    {
-      return false;
-    }
-
-    PipelineItem::WidgetState value = static_cast<PipelineItem::WidgetState>(intValue);
-    item->setWidgetState(value);
-  }
-  else if(role == PipelineModel::Roles::ErrorStateRole)
-  {
-    bool ok = false;
-    int intValue = value.toInt(&ok);
-    if(ok == false)
-    {
-      return false;
-    }
-
-    PipelineItem::ErrorState value = static_cast<PipelineItem::ErrorState>(intValue);
-    item->setErrorState(value);
-  }
-  else if(role == PipelineModel::Roles::PipelineStateRole)
-  {
-    bool ok = false;
-    int intValue = value.toInt(&ok);
-    if(ok == false)
-    {
-      return false;
-    }
-
-    PipelineItem::PipelineState value = static_cast<PipelineItem::PipelineState>(intValue);
-    item->setPipelineState(value);
-  }
-  else if(role == PipelineModel::Roles::ItemTypeRole)
-  {
-    bool ok = false;
-    int intValue = value.toInt(&ok);
-    if(ok == false)
-    {
-      return false;
-    }
-
-    PipelineItem::ItemType value = static_cast<PipelineItem::ItemType>(intValue);
-    item->setItemType(value);
-  }
-  else if(role == PipelineModel::Roles::BorderSizeRole)
-  {
-    bool ok = false;
-    int borderSize = value.toInt(&ok);
-    if(ok == false)
-    {
-      return false;
-    }
-
-    item->setBorderSize(borderSize);
-  }
-  else if(role == PipelineModel::Roles::HeightRole)
-  {
-    bool ok = false;
-    int height = value.toInt(&ok);
-    if(ok == false)
-    {
-      return false;
-    }
-
-    item->setHeight(height);
-  }
-  else if(role == PipelineModel::Roles::WidthRole)
-  {
-    bool ok = false;
-    int width = value.toInt(&ok);
-    if(ok == false)
-    {
-      return false;
-    }
-
-    item->setWidth(width);
-  }
-  else if(role == PipelineModel::Roles::XOffsetRole)
-  {
-    bool ok = false;
-    int offset = value.toInt(&ok);
-    if(ok == false)
-    {
-      return false;
-    }
-
-    item->setXOffset(offset);
-  }
-  else if(role == PipelineModel::Roles::YOffsetRole)
-  {
-    bool ok = false;
-    int offset = value.toInt(&ok);
-    if(ok == false)
-    {
-      return false;
-    }
-
-    item->setYOffset(offset);
-  }
-  else if(role == PipelineModel::Roles::AnimationTypeRole)
-  {
-    bool ok = false;
-    int animationInt = value.toInt(&ok);
-    if(ok == false)
-    {
-      return false;
-    }
-
-    PipelineItem::AnimationType animationType = static_cast<PipelineItem::AnimationType>(animationInt);
-    item->setCurrentAnimationType(animationType);
-  }
-  else if(role == PipelineModel::Roles::ExpandedRole)
-  {
-    int expanded = value.toBool();
-    item->setExpanded(expanded);
-  }
-  else if(role == Qt::DecorationRole)
-  {
-    item->setIcon(value.value<QIcon>());
-  }
-  else if(role == Qt::ToolTipRole)
-  {
-    item->setItemTooltip(value.toString());
-  }
-  else if(role == Qt::DisplayRole)
-  {
-    item->setData(index.column(), value);
-  }
-  else if(role == Qt::SizeHintRole)
-  {
-    item->setSize(value.toSize());
-  }
-  else
-  {
-    return false;
-  }
-
-  emit dataChanged(index, index);
-
-  return true;
-#endif
 }
 
 // -----------------------------------------------------------------------------
@@ -818,6 +673,19 @@ bool PipelineModel::addPipeline(FilterPipeline::Pointer pipeline, int insertInde
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+void PipelineModel::connectItem(AbstractPipelineItem* item)
+{
+  QModelIndex index = itemIndex(item);
+  emit dataChanged(index, index);
+
+  connect(item, &AbstractPipelineItem::modified, [=] {
+    emit dataChanged(index, index);
+  });
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 void PipelineModel::connectPipelineItem(PipelineItem* item)
 {
   if(nullptr == item)
@@ -825,8 +693,8 @@ void PipelineModel::connectPipelineItem(PipelineItem* item)
     return;
   }
 
-  int itemIndex = item->childIndex();
-  beginInsertRows(QModelIndex(), itemIndex, itemIndex);
+  int itemNum = item->childIndex();
+  beginInsertRows(QModelIndex(), itemNum, itemNum);
   endInsertRows();
 
   connect(item, &PipelineItem::filterAdded, [=](int index) {
@@ -838,13 +706,14 @@ void PipelineModel::connectPipelineItem(PipelineItem* item)
   });
 
   connect(item, &PipelineItem::pipelineUpdated, [=] {
-    emit dataChanged(item->pipelineIndex(), item->pipelineIndex());
     emit dataChanged(item->firstFilterIndex(), item->lastFilterIndex());
+    updateData(item);
   });
 
   connect(item, &PipelineItem::statusMessage, this, &PipelineModel::statusMessageGenerated);
+  connect(item, &PipelineItem::pipelineOutput, this, &PipelineModel::pipelineOutput);
 
-  QModelIndex pipelineIndex = item->pipelineIndex(); 
+  QModelIndex pipelineIndex = item->pipelineIndex();
   QModelIndex rootIndex = pipelineIndex.parent();
   int count = item->getCurrentPipeline()->size();
   if(count > 0)
@@ -854,6 +723,7 @@ void PipelineModel::connectPipelineItem(PipelineItem* item)
 
   emit dataChanged(item->pipelineIndex(), item->pipelineIndex());
   emit dataChanged(item->firstFilterIndex(), item->lastFilterIndex());
+  emit pipelineAdded(itemIndex(item));
 }
 
 // -----------------------------------------------------------------------------
@@ -862,7 +732,8 @@ void PipelineModel::connectPipelineItem(PipelineItem* item)
 void PipelineModel::updateData(AbstractPipelineItem* item)
 {
   QModelIndex index = itemIndex(item);
-  emit dataChanged(index, index);
+  QVector<int> roles = { Qt::DisplayRole, Qt::DecorationRole, Qt::ToolTipRole };
+  emit dataChanged(index, index, roles);
 }
 
 // -----------------------------------------------------------------------------

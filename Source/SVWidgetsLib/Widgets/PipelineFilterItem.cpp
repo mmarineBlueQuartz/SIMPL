@@ -69,12 +69,10 @@ QVariant PipelineFilterItem::data(int role) const
     if(m_Filter->getErrorCondition() < 0)
     {
       return QIcon(":/SIMPL/icons/images/bullet_ball_red.png");
-      //return QColor(Qt::GlobalColor::red);
     }
     else if(m_Filter->getWarningCondition() < 0)
     {
       return QIcon(":/SIMPL/icons/images/warning.png");
-      //return QColor(Qt::GlobalColor::darkYellow);
     }
     else
     {
@@ -154,9 +152,11 @@ void PipelineFilterItem::processPipelineMessage(const PipelineMessage& msg)
   {
     case PipelineMessage::MessageType::Error:
       m_ErrorMessages.push_back(msg);
+      emit modified();
       break;
     case PipelineMessage::MessageType::Warning:
       m_WarningMessages.push_back(msg);
+      emit modified();
       break;
     default:
       break;

@@ -281,13 +281,14 @@ public:
 
 signals:
   void clearIssuesTriggered();
-
   void preflightTriggered(const QModelIndex& pipelineIndex, PipelineModel* model);
 
   void pipelineDataChanged(const QModelIndex& pipelineIndex);
 
+  void pipelineAdded(const QModelIndex& pipelineIndex);
   void statusMessageGenerated(const QString& msg);
   void standardOutputMessageGenerated(const QString& msg);
+  void pipelineOutput(FilterPipeline::Pointer pipeline, DataContainerArray::Pointer dca);
 
 private:
   PipelineRootItem* m_RootItem;
@@ -301,6 +302,7 @@ private:
   PipelineItem* getPipelineItem(const QModelIndex& index) const;
   FilterPipeline::Pointer readPipelineFromFile(const QString& filePath);
   QModelIndex itemIndex(AbstractPipelineItem* item);
+  void connectItem(AbstractPipelineItem* item);
 
   PipelineModel(const PipelineModel&);  // Copy Constructor Not Implemented
   void operator=(const PipelineModel&); // Operator '=' Not Implemented
