@@ -850,3 +850,24 @@ void PipelineModel::connectPipelineItem(PipelineItem* item)
   emit dataChanged(item->pipelineIndex(), item->pipelineIndex());
   emit dataChanged(item->firstFilterIndex(), item->lastFilterIndex());
 }
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineModel::updateData(AbstractPipelineItem* item)
+{
+  QModelIndex index = itemIndex(item);
+  emit dataChanged(index, index);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+QModelIndex PipelineModel::itemIndex(AbstractPipelineItem* item)
+{
+  if(m_RootItem == item)
+  {
+    return QModelIndex();
+  }
+  return index(item->childIndex(), 0, itemIndex(item->parent()));
+}

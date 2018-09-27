@@ -277,6 +277,8 @@ public:
   void executePipeline(const QModelIndex& index);
   void cancelPipeline(const QModelIndex& index);
 
+  void updateData(AbstractPipelineItem* item);
+
 signals:
   void clearIssuesTriggered();
 
@@ -298,6 +300,7 @@ private:
   AbstractPipelineItem* getItem(const QModelIndex& index) const;
   PipelineItem* getPipelineItem(const QModelIndex& index) const;
   FilterPipeline::Pointer readPipelineFromFile(const QString& filePath);
+  QModelIndex itemIndex(AbstractPipelineItem* item);
 
   PipelineModel(const PipelineModel&);  // Copy Constructor Not Implemented
   void operator=(const PipelineModel&); // Operator '=' Not Implemented

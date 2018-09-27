@@ -81,10 +81,7 @@ QVariant PipelineFilterItem::data(int role) const
   }
   else if(role == Qt::ToolTipRole)
   {
-    const QString divider = "::";
-    QString tooltip = m_Filter->getGroupName() + divider + m_Filter->getSubGroupName();
-    tooltip += divider + m_Filter->getNameOfClass();
-    return tooltip;
+    return getToolTip();
   }
   else if(role == PipelineModel::Roles::ItemTypeRole)
   {
@@ -143,6 +140,25 @@ AbstractFilter::Pointer PipelineFilterItem::getFilter() const
 void PipelineFilterItem::setFilter(AbstractFilter::Pointer filter)
 {
   m_Filter = filter;
+  connect(filter.get(), &AbstractFilter::filterGeneratedMessage, this, &PipelineFilterItem::processPipelineMessage);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineFilterItem::processPipelineMessage(const PipelineMessage& msg)
+{
+  switch(msg.getType())
+  {
+    case PipelineMessage::MessageType::Error:
+      m_ErrorMessages.push_back(msg);
+      break;
+    case PipelineMessage::MessageType::Warning:
+      m_WarningMessages.push_back(msg);
+      break;
+    default:
+      break;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -151,6 +167,48 @@ void PipelineFilterItem::setFilter(AbstractFilter::Pointer filter)
 FilterInputWidget* PipelineFilterItem::getFilterInputWidget() const
 {
   return parentPipeline()->getFilterInputWidget(getFilter());
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+QString PipelineFilterItem::getToolTip() const
+{
+  QString tooltip;
+  QString divider = "::";
+  tooltip += m_Filter->getGroupName() + divider + m_Filter->getSubGroupName() + divider + m_Filter->getHumanLabel();
+
+  if(!m_ErrorMessages.empty() || !m_WarningMessages.empty())
+  {
+    tooltip += "\n";
+  }
+
+  // Begin Errors
+  for(PipelineMessage msg : m_ErrorMessages)
+  {
+    tooltip += "\nError (" + QString::number(msg.getCode()) + "): " + msg.getText();
+  }
+
+  // Begin Warnings
+  for(PipelineMessage msg : m_WarningMessages)
+  {
+    if(!tooltip.isEmpty())
+    {
+      tooltip += "\n";
+    }
+    tooltip += "Warning (" + QString::number(msg.getCode()) + "): " + msg.getText();
+  }
+
+  return tooltip;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineFilterItem::clearMessages()
+{
+  m_ErrorMessages.clear();
+  m_WarningMessages.clear();
 }
 
 // -----------------------------------------------------------------------------

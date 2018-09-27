@@ -84,6 +84,10 @@ public:
    */
   FilterInputWidget* getFilterInputWidget() const;
 
+  QString getToolTip() const;
+
+  void clearMessages();
+
   /**
    * @brief Returns the index of this item in its parent's children
    * @return
@@ -127,6 +131,10 @@ public:
 
 private:
   AbstractFilter::Pointer m_Filter = nullptr;
+  std::list<PipelineMessage> m_ErrorMessages;
+  std::list<PipelineMessage> m_WarningMessages;
+
+  void processPipelineMessage(const PipelineMessage& msg);
 
   PipelineFilterItem(const PipelineFilterItem&); // Copy Constructor Not Implemented
   void operator=(const PipelineFilterItem&);     // Operator '=' Not Implemented

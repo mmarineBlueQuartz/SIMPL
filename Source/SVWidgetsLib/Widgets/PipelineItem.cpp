@@ -129,6 +129,8 @@ void PipelineItem::connectPipeline()
   connect(m_TempPipeline.get(), &FilterPipeline::filterRemoved, this, &PipelineItem::removeFilter);
   connect(m_TempPipeline.get(), &FilterPipeline::pipelineFinished, this, &PipelineItem::pipelineUpdated);
   connect(m_TempPipeline.get(), &FilterPipeline::pipelineNameChanged, this, &PipelineItem::pipelineUpdated);
+  connect(m_TempPipeline.get(), &FilterPipeline::preflightStarted, this, &PipelineItem::clearIssues);
+  connect(m_TempPipeline.get(), &FilterPipeline::pipelineStarted, this, &PipelineItem::clearIssues);
   //connect(m_TempPipeline.get(), &FilterPipeline::pipelineWasEdited, this, &PipelineItem::preflightPipeline);
 }
 
@@ -760,6 +762,11 @@ void PipelineItem::addPipelineMessageObserver(QObject* observer)
 void PipelineItem::clearIssues()
 {
   // TODO: clear pipeline issues and FilterStates
+  for(PipelineFilterItem* item : m_FilterItems)
+  {
+    item->clearMessages();
+    model()->updateData(item);
+  }
 }
 
 // -----------------------------------------------------------------------------
