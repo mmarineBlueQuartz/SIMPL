@@ -256,6 +256,8 @@ protected:
 signals:
   void pipelineGeneratedMessage(const PipelineMessage& message);
 
+  void preflightStarted();
+
   /**
   * @brief This method is emitted from the pipeline and signals the pipeline has started execution
   */

@@ -684,6 +684,8 @@ int FilterPipeline::preflightPipeline()
   DataArrayPath::RenameContainer renamedPaths;
   DataArrayPath::RenameContainer filterRenamedPaths;
 
+  emit preflightStarted();
+
   // Start looping through each filter in the Pipeline and preflight everything
   for(FilterContainerType::iterator filter = m_Pipeline.begin(); filter != m_Pipeline.end(); ++filter)
   {
