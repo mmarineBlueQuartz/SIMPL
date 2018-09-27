@@ -852,8 +852,6 @@ void PipelineModel::connectPipelineItem(PipelineItem* item)
     insertRows(0, count, item->pipelineIndex());
   }
 
-  bool test = hasChildren(item->pipelineIndex());
-
   emit dataChanged(item->pipelineIndex(), item->pipelineIndex());
   emit dataChanged(item->firstFilterIndex(), item->lastFilterIndex());
 }
