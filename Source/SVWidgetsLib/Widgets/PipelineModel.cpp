@@ -820,6 +820,15 @@ bool PipelineModel::addPipeline(FilterPipeline::Pointer pipeline, int insertInde
 // -----------------------------------------------------------------------------
 void PipelineModel::connectPipelineItem(PipelineItem* item)
 {
+  if(nullptr == item)
+  {
+    return;
+  }
+
+  int itemIndex = item->childIndex();
+  beginInsertRows(QModelIndex(), itemIndex, itemIndex);
+  endInsertRows();
+
   connect(item, &PipelineItem::filterAdded, [=](int index) {
     insertRows(index, index, item->pipelineIndex());
   });
@@ -840,9 +849,7 @@ void PipelineModel::connectPipelineItem(PipelineItem* item)
   int count = item->getCurrentPipeline()->size();
   if(count > 0)
   {
-    beginInsertRows(item->pipelineIndex(), 0, count);
     insertRows(0, count, item->pipelineIndex());
-    endInsertRows();
   }
 
   bool test = hasChildren(item->pipelineIndex());
