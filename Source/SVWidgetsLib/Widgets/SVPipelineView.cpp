@@ -165,6 +165,11 @@ void SVPipelineView::setupGui()
   setFocusPolicy(Qt::StrongFocus);
   setDropIndicatorShown(false);
 
+#if 0
+  PipelineItemDelegate* delegate = new PipelineItemDelegate(this);
+  setItemDelegate(delegate);
+#endif
+
   connectSignalsSlots();
 }
 
