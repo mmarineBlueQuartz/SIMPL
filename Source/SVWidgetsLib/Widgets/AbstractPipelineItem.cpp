@@ -66,6 +66,23 @@ void AbstractPipelineItem::setParent(AbstractPipelineItem* parent)
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+bool AbstractPipelineItem::hasIndex(int row, int column)
+{
+  if(row < 0 || row >= rowCount())
+  {
+    return false;
+  }
+  else if(column < 0 || column >= columnCount())
+  {
+    return false;
+  }
+
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 int AbstractPipelineItem::rowCount() const
 {
   return childCount();

@@ -179,6 +179,8 @@ public:
    */
   virtual AbstractFilter::Pointer removeFirstFilterByName(const QString& name);
 
+  virtual bool removeFilter(AbstractFilter::Pointer filter);
+
   virtual void printFilterNames(QTextStream& out);
 
   /**

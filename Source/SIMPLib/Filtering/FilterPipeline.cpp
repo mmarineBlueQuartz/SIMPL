@@ -503,6 +503,20 @@ AbstractFilter::Pointer FilterPipeline::removeFirstFilterByName(const QString& n
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+bool FilterPipeline::removeFilter(AbstractFilter::Pointer filter)
+{
+  int index = indexOf(filter);
+  if(index >= 0)
+  {
+    return erase(index);
+  }
+
+  return false;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 FilterPipeline::FilterContainerType::iterator FilterPipeline::begin()
 {
   return m_Pipeline.begin();

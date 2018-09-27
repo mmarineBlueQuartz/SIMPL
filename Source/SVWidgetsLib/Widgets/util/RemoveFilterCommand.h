@@ -42,6 +42,7 @@
 #include <QtWidgets/QUndoCommand>
 
 #include "SIMPLib/Filtering/AbstractFilter.h"
+#include "SIMPLib/Filtering/FilterPipeline.h"
 
 #include "SVWidgetsLib/SVWidgetsLib.h"
 
@@ -51,8 +52,8 @@ class SVPipelineView;
 class SVWidgetsLib_EXPORT RemoveFilterCommand : public QUndoCommand
 {
 public:
-  RemoveFilterCommand(AbstractFilter::Pointer filter, SVPipelineView* view, QString actionText, bool useAnimationOnFirstRun = true, QUndoCommand* parent = 0);
-  RemoveFilterCommand(std::vector<AbstractFilter::Pointer> filters, SVPipelineView* view, QString actionText, bool useAnimationOnFirstRun = true, QUndoCommand* parent = 0);
+  RemoveFilterCommand(AbstractFilter::Pointer filter, FilterPipeline::Pointer pipelien, QString actionText, bool useAnimationOnFirstRun = true, QUndoCommand* parent = 0);
+  RemoveFilterCommand(std::vector<AbstractFilter::Pointer> filters, FilterPipeline::Pointer pipeline, QString actionText, bool useAnimationOnFirstRun = true, QUndoCommand* parent = 0);
   ~RemoveFilterCommand() override;
 
   void undo() override;
@@ -60,7 +61,7 @@ public:
   void redo() override;
 
 private:
-  SVPipelineView* m_PipelineView = nullptr;
+  FilterPipeline::Pointer m_Pipeline = nullptr;
   std::vector<AbstractFilter::Pointer> m_Filters;
   std::vector<int> m_FilterRows;
   bool m_FirstRun = true;
@@ -78,18 +79,6 @@ private:
    * @param row
    */
   void removeFilter(AbstractFilter::Pointer filter);
-
-  /**
-   * @brief connectFilterSignalsSlots
-   * @param filter
-   */
-  void connectFilterSignalsSlots(AbstractFilter::Pointer filter);
-
-  /**
-   * @brief disconnectFilterSignalsSlots
-   * @param filter
-   */
-  void disconnectFilterSignalsSlots(AbstractFilter::Pointer filter);
 
   RemoveFilterCommand(const RemoveFilterCommand&) = delete; // Copy Constructor Not Implemented
   void operator=(const RemoveFilterCommand&) = delete;      // Move assignment Not Implemented

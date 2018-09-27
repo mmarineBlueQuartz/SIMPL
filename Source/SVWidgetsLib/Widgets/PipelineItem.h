@@ -184,6 +184,8 @@ private:
   void pipelineFinished();
   void endPipelineThread();
   void clearIssues();
+  void addFilter(int index, AbstractFilter::Pointer filter);
+  void removeFilter(int index, AbstractFilter::Pointer filter);
 
   PipelineItem(const PipelineItem&);   // Copy Constructor Not Implemented
   void operator=(const PipelineItem&); // Operator '=' Not Implemented

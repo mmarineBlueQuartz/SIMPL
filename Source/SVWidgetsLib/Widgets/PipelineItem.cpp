@@ -118,8 +118,15 @@ void PipelineItem::connectPipeline()
     return;
   }
 
-  connect(m_TempPipeline.get(), &FilterPipeline::filterAdded, this, &PipelineItem::filterAdded);
-  connect(m_TempPipeline.get(), &FilterPipeline::filterRemoved, this, &PipelineItem::filterRemoved);
+  m_FilterItems.clear();
+  for(AbstractFilter::Pointer filter : (*m_TempPipeline))
+  {
+    PipelineFilterItem* filterItem = new PipelineFilterItem(filter, this);
+    m_FilterItems[filter] = filterItem;
+  }
+
+  connect(m_TempPipeline.get(), &FilterPipeline::filterAdded, this, &PipelineItem::addFilter);
+  connect(m_TempPipeline.get(), &FilterPipeline::filterRemoved, this, &PipelineItem::removeFilter);
   connect(m_TempPipeline.get(), &FilterPipeline::pipelineFinished, this, &PipelineItem::pipelineUpdated);
   connect(m_TempPipeline.get(), &FilterPipeline::pipelineNameChanged, this, &PipelineItem::pipelineUpdated);
   //connect(m_TempPipeline.get(), &FilterPipeline::pipelineWasEdited, this, &PipelineItem::preflightPipeline);
@@ -435,7 +442,7 @@ bool PipelineItem::insertChild(int position, AbstractPipelineItem* child)
 // -----------------------------------------------------------------------------
 bool PipelineItem::insertChildren(int position, int count)
 {
-  return false;
+  return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -605,7 +612,13 @@ void PipelineItem::updateFilterInputWidgets()
 // -----------------------------------------------------------------------------
 void PipelineItem::setupFilterInputWidget(AbstractFilter::Pointer filter)
 {
-  m_FilterInputWidgets[filter] = new FilterInputWidget(filter, nullptr);
+  FilterInputWidget* fiw = new FilterInputWidget(filter, nullptr);
+  connect(fiw, &FilterInputWidget::filterParametersChanged, this, [=](bool preflight) { 
+    if(preflight)
+    {
+      m_TempPipeline->preflightPipeline(); 
+    }});
+  m_FilterInputWidgets[filter] = fiw;
   m_FilterInputWidgets[filter]->displayFilterParameters(filter);
 }
 
@@ -628,6 +641,31 @@ FilterInputWidget* PipelineItem::getFilterInputWidget(AbstractFilter::Pointer fi
 FilterPipeline::FilterState PipelineItem::getFilterState(AbstractFilter::Pointer filter) const
 {
   return m_TempPipeline->getFilterState(filter);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::addFilter(int index, AbstractFilter::Pointer filter)
+{
+  PipelineFilterItem* filterItem = new PipelineFilterItem(filter, this);
+  m_FilterItems[filter] = filterItem;
+  setupFilterInputWidget(filter);
+  emit filterAdded(index, filter);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::removeFilter(int index, AbstractFilter::Pointer filter)
+{
+  auto iter = m_FilterItems.find(filter);
+  if(nullptr != iter.value())
+  {
+    m_FilterItems.erase(iter);
+    m_FilterInputWidgets.erase(m_FilterInputWidgets.find(filter));
+    emit filterRemoved(index, filter);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -697,7 +735,7 @@ bool PipelineItem::setData(int role, const QVariant& value)
 // -----------------------------------------------------------------------------
 Qt::ItemFlags PipelineItem::flags() const
 {
-  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;// | Qt::ItemIsDropEnabled;
+  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled;
 }
 
 // -----------------------------------------------------------------------------

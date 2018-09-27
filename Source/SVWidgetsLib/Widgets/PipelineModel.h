@@ -115,6 +115,8 @@ public:
    */
   FilterPipeline::Pointer pipeline(const QModelIndex& index) const;
 
+  FilterPipeline::Pointer lastPipeline() const;
+
   /**
    * @brief Returns the index of the given pipeline with specified parent
    * @param filter
@@ -145,6 +147,10 @@ public:
    * @return
    */
   QModelIndex parent(const QModelIndex& index) const override;
+
+  bool hasChildren(const QModelIndex& index) const override;
+
+  bool hasIndex(int row, int column, const QModelIndex &parent = QModelIndex()) const;
 
   /**
    * @brief Returns the number of rows under the given parent

@@ -40,6 +40,7 @@
 #include <QtWidgets/QUndoCommand>
 
 #include <SIMPLib/Filtering/AbstractFilter.h>
+#include <SIMPLib/Filtering/FilterPipeline.h>
 
 #include "SVWidgetsLib/SVWidgetsLib.h"
 
@@ -60,7 +61,7 @@ public:
    * @param insertIndex
    * @param parent
    */
-  MoveFilterCommand(AbstractFilter::Pointer filter, SVPipelineView* view, int insertIndex, QUndoCommand* parent = nullptr);
+  MoveFilterCommand(AbstractFilter::Pointer filter, FilterPipeline::Pointer pipeline, int insertIndex, QUndoCommand* parent = nullptr);
 
   /**
    * @brief MoveFilterCommand
@@ -69,7 +70,7 @@ public:
    * @param insertIndex
    * @param parent
    */
-  MoveFilterCommand(std::vector<AbstractFilter::Pointer> filters, SVPipelineView* view, int insertIndex, QUndoCommand* parent = nullptr);
+  MoveFilterCommand(std::vector<AbstractFilter::Pointer> filters, FilterPipeline::Pointer pipeline, int insertIndex, QUndoCommand* parent = nullptr);
 
   ~MoveFilterCommand() override;
 
@@ -85,7 +86,7 @@ public:
 
 private:
   std::vector<AbstractFilter::Pointer> m_Filters;
-  SVPipelineView* m_PipelineView = nullptr;
+  FilterPipeline::Pointer m_Pipeline = nullptr;
   int m_InsertIndex;
   bool m_FirstRun = true;
 

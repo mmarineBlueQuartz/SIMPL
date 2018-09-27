@@ -51,9 +51,9 @@ class QPushButton;
 class SVWidgetsLib_EXPORT AddFilterCommand : public QUndoCommand
 {
 public:
-  AddFilterCommand(AbstractFilter::Pointer filter, SVPipelineView* view, int insertIndex, QString actionText, bool useAnimationOnFirstRun = true, QUndoCommand* parent = nullptr);
+  AddFilterCommand(AbstractFilter::Pointer filter, FilterPipeline::Pointer pipeline, int insertIndex, QString actionText, bool useAnimationOnFirstRun = true, QUndoCommand* parent = nullptr);
 
-  AddFilterCommand(std::vector<AbstractFilter::Pointer> filters, SVPipelineView* view, int insertIndex, QString actionText, bool useAnimationOnFirstRun = true, QUndoCommand* parent = nullptr);
+  AddFilterCommand(std::vector<AbstractFilter::Pointer> filters, FilterPipeline::Pointer pipeline, int insertIndex, QString actionText, bool useAnimationOnFirstRun = true, QUndoCommand* parent = nullptr);
 
   ~AddFilterCommand() override;
 
@@ -64,7 +64,7 @@ public:
 private:
   std::vector<AbstractFilter::Pointer> m_Filters;
   QString m_ActionText;
-  SVPipelineView* m_PipelineView = nullptr;
+  FilterPipeline::Pointer m_Pipeline = nullptr;
   std::vector<int> m_FilterRows;
   bool m_FirstRun = true;
   bool m_UseAnimationOnFirstRun;
@@ -81,19 +81,7 @@ private:
    * @param filterIndex
    * @param pipelineIndex
    */
-  void removeFilter(const QPersistentModelIndex& index);
-
-  /**
-   * @brief connectFilterSignalsSlots
-   * @param filter
-   */
-  void connectFilterSignalsSlots(AbstractFilter::Pointer filter);
-
-  /**
-   * @brief disconnectFilterSignalsSlots
-   * @param filter
-   */
-  void disconnectFilterSignalsSlots(AbstractFilter::Pointer filter);
+  void removeFilter(AbstractFilter::Pointer filter);
 
   AddFilterCommand(const AddFilterCommand&) = delete; // Copy Constructor Not Implemented
   void operator=(const AddFilterCommand&) = delete;   // Move assignment Not Implemented

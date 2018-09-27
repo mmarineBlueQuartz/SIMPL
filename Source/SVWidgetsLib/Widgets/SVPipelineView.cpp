@@ -214,7 +214,7 @@ void SVPipelineView::addFilterFromClassName(const QString& filterClassName, int 
 // -----------------------------------------------------------------------------
 void SVPipelineView::addFilter(AbstractFilter::Pointer filter, int insertIndex, bool useAnimationOnFirstRun)
 {
-  AddFilterCommand* cmd = new AddFilterCommand(filter, this, insertIndex, "Add", useAnimationOnFirstRun);
+  AddFilterCommand* cmd = new AddFilterCommand(filter, getCurrentPipeline(), insertIndex, "Add", useAnimationOnFirstRun);
   addUndoCommand(cmd);
 }
 
@@ -223,7 +223,7 @@ void SVPipelineView::addFilter(AbstractFilter::Pointer filter, int insertIndex, 
 // -----------------------------------------------------------------------------
 void SVPipelineView::addFilters(std::vector<AbstractFilter::Pointer> filters, int insertIndex, bool useAnimationOnFirstRun)
 {
-  AddFilterCommand* cmd = new AddFilterCommand(filters, this, insertIndex, "Add", useAnimationOnFirstRun);
+  AddFilterCommand* cmd = new AddFilterCommand(filters, getCurrentPipeline(), insertIndex, "Add", useAnimationOnFirstRun);
   addUndoCommand(cmd);
 }
 
@@ -232,7 +232,7 @@ void SVPipelineView::addFilters(std::vector<AbstractFilter::Pointer> filters, in
 // -----------------------------------------------------------------------------
 void SVPipelineView::removeFilter(AbstractFilter::Pointer filter, bool useAnimationOnFirstRun)
 {
-  RemoveFilterCommand* cmd = new RemoveFilterCommand(filter, this, "Remove", useAnimationOnFirstRun);
+  RemoveFilterCommand* cmd = new RemoveFilterCommand(filter, getCurrentPipeline(), "Remove", useAnimationOnFirstRun);
   addUndoCommand(cmd);
 }
 
@@ -241,7 +241,7 @@ void SVPipelineView::removeFilter(AbstractFilter::Pointer filter, bool useAnimat
 // -----------------------------------------------------------------------------
 void SVPipelineView::removeFilters(std::vector<AbstractFilter::Pointer> filters, bool useAnimationOnFirstRun)
 {
-  RemoveFilterCommand* cmd = new RemoveFilterCommand(filters, this, "Remove", useAnimationOnFirstRun);
+  RemoveFilterCommand* cmd = new RemoveFilterCommand(filters, getCurrentPipeline(), "Remove", useAnimationOnFirstRun);
   addUndoCommand(cmd);
 }
 
@@ -294,7 +294,7 @@ void SVPipelineView::listenFilterCompleted(AbstractFilter* filter)
 // -----------------------------------------------------------------------------
 void SVPipelineView::cutFilter(AbstractFilter::Pointer filter, bool useAnimationOnFirstRun)
 {
-  RemoveFilterCommand* cmd = new RemoveFilterCommand(filter, this, "Cut", useAnimationOnFirstRun);
+  RemoveFilterCommand* cmd = new RemoveFilterCommand(filter, getCurrentPipeline(), "Cut", useAnimationOnFirstRun);
   addUndoCommand(cmd);
 }
 
@@ -303,7 +303,7 @@ void SVPipelineView::cutFilter(AbstractFilter::Pointer filter, bool useAnimation
 // -----------------------------------------------------------------------------
 void SVPipelineView::cutFilters(std::vector<AbstractFilter::Pointer> filters, bool useAnimationOnFirstRun)
 {
-  RemoveFilterCommand* cmd = new RemoveFilterCommand(filters, this, "Cut", useAnimationOnFirstRun);
+  RemoveFilterCommand* cmd = new RemoveFilterCommand(filters, getCurrentPipeline(), "Cut", useAnimationOnFirstRun);
   addUndoCommand(cmd);
 }
 
@@ -325,7 +325,7 @@ void SVPipelineView::pasteFilters(int insertIndex, bool useAnimationOnFirstRun)
     filters.push_back(container[i]);
   }
 
-  AddFilterCommand* addCmd = new AddFilterCommand(filters, this, insertIndex, "Paste", useAnimationOnFirstRun);
+  AddFilterCommand* addCmd = new AddFilterCommand(filters, getCurrentPipeline(), insertIndex, "Paste", useAnimationOnFirstRun);
   addUndoCommand(addCmd);
 }
 
@@ -492,7 +492,19 @@ FilterPipeline::Pointer SVPipelineView::getFilterPipelineCopy()
 // -----------------------------------------------------------------------------
 FilterPipeline::Pointer SVPipelineView::getCurrentPipeline()
 {
-  return getPipelineModel()->pipeline(currentIndex());
+  FilterPipeline::Pointer currentPipeline = getPipelineModel()->pipeline(currentIndex());
+  if(nullptr != currentPipeline)
+  {
+    return currentPipeline;
+  }
+  FilterPipeline::Pointer lastPipeline = getPipelineModel()->lastPipeline();
+  if(nullptr != lastPipeline)
+  {
+    return lastPipeline;
+  }
+  FilterPipeline::Pointer newPipeline = FilterPipeline::New();
+  getPipelineModel()->appendPipeline(newPipeline);
+  return newPipeline;
 }
 
 // -----------------------------------------------------------------------------
@@ -651,8 +663,11 @@ void SVPipelineView::clearPipeline()
     filters.push_back(model->filter(filterIndex));
   }
 
-  RemoveFilterCommand* removeCmd = new RemoveFilterCommand(filters, this, "Clear");
-  addUndoCommand(removeCmd);
+  if(filters.size() > 0)
+  {
+    RemoveFilterCommand* removeCmd = new RemoveFilterCommand(filters, getCurrentPipeline(), "Clear");
+    addUndoCommand(removeCmd);
+  }
 
   emit clearDataStructureWidgetTriggered();
 
@@ -764,7 +779,7 @@ void SVPipelineView::beginDrag(QMouseEvent* event)
   {
     m_MoveCommand = new QUndoCommand();
 
-    RemoveFilterCommand* cmd = new RemoveFilterCommand(filters, this, "Remove", false, m_MoveCommand);
+    RemoveFilterCommand* cmd = new RemoveFilterCommand(filters, getCurrentPipeline(), "Remove", false, m_MoveCommand);
     m_MoveCommand->setText(cmd->text());
 
     int dropIndicatorRow = currentIndex().row();
@@ -1111,7 +1126,7 @@ void SVPipelineView::dropEvent(QDropEvent* event)
     if(event->source() == this && modifiers.testFlag(Qt::AltModifier) == false)
     {
       // This is an internal move, so we need to create an Add command and add it as a child to the overall move command.
-      AddFilterCommand* cmd = new AddFilterCommand(filters, this, dropRow, "Move", true, m_MoveCommand);
+      AddFilterCommand* cmd = new AddFilterCommand(filters, getCurrentPipeline(), dropRow, "Move", true, m_MoveCommand);
 
       // Set the text of the drag command
       QString text = cmd->text();
@@ -1375,7 +1390,7 @@ void SVPipelineView::toStoppedState()
 int SVPipelineView::openPipeline(const QString& filePath, int insertIndex)
 {
   m_CurrentPath = filePath;
-  getPipelineModel()->openPipeline(filePath, insertIndex);
+  //getPipelineModel()->openPipeline(filePath, insertIndex);
 
   QFileInfo fi(filePath);
   if(fi.exists() == false)
@@ -1432,15 +1447,15 @@ int SVPipelineView::openPipeline(const QString& filePath, int insertIndex)
   emit statusMessage(tr("Opened \"%1\" Pipeline").arg(baseName));
   emit stdOutMessage(tr("Opened \"%1\" Pipeline").arg(baseName));
 
-  QList<AbstractFilter::Pointer> pipelineFilters = pipeline->getFilterContainer();
-  std::vector<AbstractFilter::Pointer> filters;
-  for(int i = 0; i < pipelineFilters.size(); i++)
-  {
-    filters.push_back(pipelineFilters[i]);
-  }
+  //QList<AbstractFilter::Pointer> pipelineFilters = pipeline->getFilterContainer();
+  //std::vector<AbstractFilter::Pointer> filters;
+  //for(int i = 0; i < pipelineFilters.size(); i++)
+  //{
+  //  filters.push_back(pipelineFilters[i]);
+  //}
 
-  // Populate the pipeline view
-  addFilters(filters, insertIndex);
+  //// Populate the pipeline view
+  //addFilters(filters, insertIndex);
 
   emit pipelineFilePathUpdated(filePath);
   emit pipelineChanged();

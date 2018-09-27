@@ -326,6 +326,20 @@ FilterPipeline::Pointer PipelineModel::pipeline(const QModelIndex& index) const
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+FilterPipeline::Pointer PipelineModel::lastPipeline() const
+{
+  if(m_RootItem->childCount() == 0)
+  {
+    return nullptr;
+  }
+
+  PipelineItem* item = dynamic_cast<PipelineItem*>(m_RootItem->child(m_RootItem->childCount() - 1));
+  return item->getCurrentPipeline();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 QModelIndex PipelineModel::indexOfPipeline(FilterPipeline::Pointer pipeline, const QModelIndex& parent)
 {
   for(int i = 0; i < rowCount(parent); i++)
@@ -578,7 +592,6 @@ QModelIndex PipelineModel::index(int row, int column, const QModelIndex& parent)
   }
 
   AbstractPipelineItem* parentItem = getItem(parent);
-
   AbstractPipelineItem* childItem = parentItem->child(row);
   if(childItem)
   {
@@ -669,6 +682,23 @@ QModelIndex PipelineModel::parent(const QModelIndex& index) const
   }
 
   return createIndex(parentItem->childIndex(), 0, parentItem);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool PipelineModel::hasChildren(const QModelIndex& index) const
+{
+  AbstractPipelineItem* item = getItem(index);
+  return item->childCount() > 0;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool PipelineModel::hasIndex(int row, int column, const QModelIndex &parent) const
+{
+  return getItem(parent)->hasIndex(row, column);
 }
 
 // -----------------------------------------------------------------------------
@@ -774,7 +804,7 @@ bool PipelineModel::isEmpty()
 // -----------------------------------------------------------------------------
 void PipelineModel::appendPipeline(FilterPipeline::Pointer pipeline)
 {
-  m_RootItem->insertPipeline(m_RootItem->childCount(), pipeline);
+   m_RootItem->insertPipeline(m_RootItem->childCount(), pipeline);
 }
 
 // -----------------------------------------------------------------------------
@@ -791,13 +821,11 @@ bool PipelineModel::addPipeline(FilterPipeline::Pointer pipeline, int insertInde
 void PipelineModel::connectPipelineItem(PipelineItem* item)
 {
   connect(item, &PipelineItem::filterAdded, [=](int index) {
-    beginInsertRows(item->pipelineIndex(), index, index);
-    endInsertRows();
+    insertRows(index, index, item->pipelineIndex());
   });
 
   connect(item, &PipelineItem::filterRemoved, [=](int index) {
-    beginRemoveRows(item->pipelineIndex(), index, index);
-    endRemoveRows();
+    removeRows(index, index, item->pipelineIndex());
   });
 
   connect(item, &PipelineItem::pipelineUpdated, [=] {
@@ -806,6 +834,18 @@ void PipelineModel::connectPipelineItem(PipelineItem* item)
   });
 
   connect(item, &PipelineItem::statusMessage, this, &PipelineModel::statusMessageGenerated);
+
+  QModelIndex pipelineIndex = item->pipelineIndex(); 
+  QModelIndex rootIndex = pipelineIndex.parent();
+  int count = item->getCurrentPipeline()->size();
+  if(count > 0)
+  {
+    beginInsertRows(item->pipelineIndex(), 0, count);
+    insertRows(0, count, item->pipelineIndex());
+    endInsertRows();
+  }
+
+  bool test = hasChildren(item->pipelineIndex());
 
   emit dataChanged(item->pipelineIndex(), item->pipelineIndex());
   emit dataChanged(item->firstFilterIndex(), item->lastFilterIndex());

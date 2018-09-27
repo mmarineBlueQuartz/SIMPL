@@ -48,7 +48,7 @@ class PipelineItem;
 class SVWidgetsLib_EXPORT PipelineFilterItem : public AbstractPipelineItem
 {
 public:
-  PipelineFilterItem(AbstractFilter::Pointer filter, PipelineItem* parent = nullptr);
+  PipelineFilterItem(AbstractFilter::Pointer filter, PipelineItem* parent);
   virtual ~PipelineFilterItem() = default;
 
   /**

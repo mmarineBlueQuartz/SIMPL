@@ -53,17 +53,15 @@
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-AddFilterCommand::AddFilterCommand(AbstractFilter::Pointer filter, SVPipelineView* view, int insertIndex, QString actionText, bool useAnimationOnFirstRun, QUndoCommand* parent)
+AddFilterCommand::AddFilterCommand(AbstractFilter::Pointer filter, FilterPipeline::Pointer pipeline, int insertIndex, QString actionText, bool useAnimationOnFirstRun, QUndoCommand* parent)
 : QUndoCommand(parent)
 , m_ActionText(actionText)
-, m_PipelineView(view)
+, m_Pipeline(pipeline)
 , m_UseAnimationOnFirstRun(useAnimationOnFirstRun)
 {
-  PipelineModel* model = m_PipelineView->getPipelineModel();
-
   if(insertIndex < 0)
   {
-    insertIndex = model->rowCount();
+    insertIndex = pipeline->size();
   }
 
   setText(QObject::tr("\"%1 '%2'\"").arg(actionText).arg(filter->getHumanLabel()));
@@ -76,18 +74,17 @@ AddFilterCommand::AddFilterCommand(AbstractFilter::Pointer filter, SVPipelineVie
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-AddFilterCommand::AddFilterCommand(std::vector<AbstractFilter::Pointer> filters, SVPipelineView* view, int insertIndex, QString actionText, bool useAnimationOnFirstRun, QUndoCommand* parent)
+AddFilterCommand::AddFilterCommand(std::vector<AbstractFilter::Pointer> filters, FilterPipeline::Pointer pipeline, int insertIndex, QString actionText, bool useAnimationOnFirstRun,
+                                   QUndoCommand* parent)
 : QUndoCommand(parent)
 , m_Filters(filters)
 , m_ActionText(actionText)
-, m_PipelineView(view)
+, m_Pipeline(pipeline)
 , m_UseAnimationOnFirstRun(useAnimationOnFirstRun)
 {
-  PipelineModel* model = m_PipelineView->getPipelineModel();
-
   if(insertIndex < 0)
   {
-    insertIndex = model->rowCount();
+    insertIndex = pipeline->size();
   }
 
   if(filters.size() == 1)
@@ -120,13 +117,9 @@ void AddFilterCommand::undo()
     return;
   }
 
-  PipelineModel* model = m_PipelineView->getPipelineModel();
-
   for(int i = 0; i < m_Filters.size(); i++)
   {
-    QPersistentModelIndex filterIndex = model->indexOfFilter(m_Filters[i].get());
-
-    removeFilter(filterIndex);
+    removeFilter(m_Filters[i]);
   }
 
   QString statusMessage;
@@ -139,12 +132,12 @@ void AddFilterCommand::undo()
     statusMessage = QObject::tr("Undo \"Added '%1' filter at index %2\"").arg(m_Filters[0]->getHumanLabel()).arg(m_FilterRows[0] + 1);
   }
 
-  m_PipelineView->preflightPipeline();
+  m_Pipeline->preflightPipeline();
 
-  emit m_PipelineView->pipelineChanged();
+  // emit m_Pipeline->pipelineChanged();
 
-  emit m_PipelineView->statusMessage(statusMessage);
-  emit m_PipelineView->stdOutMessage(statusMessage);
+  // emit m_PipelineView->statusMessage(statusMessage);
+  // emit m_PipelineView->stdOutMessage(statusMessage);
 }
 
 // -----------------------------------------------------------------------------
@@ -157,15 +150,13 @@ void AddFilterCommand::redo()
     return;
   }
 
-  PipelineModel* model = m_PipelineView->getPipelineModel();
-
   for(size_t i = 0; i < m_Filters.size(); i++)
   {
     addFilter(m_Filters[i], m_FilterRows[i]);
   }
 
-  emit m_PipelineView->preflightPipeline();
-  emit m_PipelineView->pipelineChanged();
+  emit m_Pipeline->preflightPipeline();
+  emit m_Pipeline->pipelineWasEdited();
 
   QString statusMessage;
   if(m_Filters.size() > 1)
@@ -187,8 +178,8 @@ void AddFilterCommand::redo()
     m_FirstRun = false;
   }
 
-  emit model->statusMessageGenerated(statusMessage);
-  emit model->standardOutputMessageGenerated(statusMessage);
+  //emit model->statusMessageGenerated(statusMessage);
+  //emit model->standardOutputMessageGenerated(statusMessage);
 }
 
 // -----------------------------------------------------------------------------
@@ -199,21 +190,7 @@ void AddFilterCommand::addFilter(AbstractFilter::Pointer filter, int insertionIn
   // Reset the filter's Removing property
   filter->setRemoving(false);
 
-  PipelineModel* model = m_PipelineView->getPipelineModel();
-
-  model->insertRow(insertionIndex);
-
-  QModelIndex filterIndex = model->index(insertionIndex, AbstractPipelineItem::Contents);
-  //  model->setData(filterIndex, filter->getHumanLabel(), Qt::DisplayRole);
-  model->setData(filterIndex, static_cast<int>(AbstractPipelineItem::ItemType::Filter), PipelineModel::ItemTypeRole);
-  model->setFilter(filterIndex, filter);
-
-  connectFilterSignalsSlots(filter);
-
-  if(filter->getEnabled() == false)
-  {
-    model->setData(filterIndex, static_cast<int>(FilterPipeline::FilterState::Disabled), PipelineModel::FilterStateRole);
-  }
+  m_Pipeline->insert(insertionIndex, filter);
 
 #if 0
   if(m_UseAnimationOnFirstRun == false && m_FirstRun == true)
@@ -239,66 +216,24 @@ void AddFilterCommand::addFilter(AbstractFilter::Pointer filter, int insertionIn
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void AddFilterCommand::removeFilter(const QPersistentModelIndex& index)
+void AddFilterCommand::removeFilter(AbstractFilter::Pointer filter)
 {
-  PipelineModel* model = m_PipelineView->getPipelineModel();
-  AbstractFilter::Pointer filter = model->filter(index);
-
   // Do not remove a filter that is already being removed
   if(filter->getRemoving())
   {
     return;
   }
 
-  disconnectFilterSignalsSlots(filter);
-
-  QRect filterRect = m_PipelineView->visualRect(index);
+  m_Pipeline->removeFilter(filter);
+  m_Pipeline->preflightPipeline();
 
 #if 0
+  QRect filterRect = m_PipelineView->visualRect(index);
+
   PipelineItemSlideAnimation* animation = new PipelineItemSlideAnimation(model, QPersistentModelIndex(index), filterRect.width(), PipelineItemSlideAnimation::AnimationDirection::ExitRight);
   model->setData(QPersistentModelIndex(index), PipelineItem::AnimationType::Remove, PipelineModel::Roles::AnimationTypeRole);
 
   QObject::connect(animation, &PipelineItemSlideAnimation::finished, [=]() mutable { model->removeRow(index.row()); });
   animation->start(QAbstractAnimation::DeleteWhenStopped);
 #endif
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-void AddFilterCommand::connectFilterSignalsSlots(AbstractFilter::Pointer filter)
-{
-  PipelineModel* model = m_PipelineView->getPipelineModel();
-  QModelIndex index = model->indexOfFilter(filter.get());
-
-  QObject::connect(filter.get(), SIGNAL(filterCompleted(AbstractFilter*)), m_PipelineView, SLOT(listenFilterCompleted(AbstractFilter*)));
-
-  QObject::connect(filter.get(), SIGNAL(filterInProgress(AbstractFilter*)), m_PipelineView, SLOT(listenFilterInProgress(AbstractFilter*)));
-
-  FilterInputWidget* fiw = model->filterInputWidget(index);
-
-  QObject::connect(fiw, &FilterInputWidget::filterParametersChanged, [=] (bool preflight) {
-    if (preflight)
-    {
-      m_PipelineView->preflightPipeline();
-    }
-    emit m_PipelineView->filterParametersChanged(filter);
-  });
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-void AddFilterCommand::disconnectFilterSignalsSlots(AbstractFilter::Pointer filter)
-{
-  PipelineModel* model = m_PipelineView->getPipelineModel();
-  QModelIndex index = model->indexOfFilter(filter.get());
-
-  QObject::disconnect(filter.get(), &AbstractFilter::filterCompleted, 0, 0);
-
-  QObject::disconnect(filter.get(), &AbstractFilter::filterInProgress, 0, 0);
-
-  FilterInputWidget* fiw = model->filterInputWidget(index);
-
-  QObject::disconnect(fiw, &FilterInputWidget::filterParametersChanged, 0, 0);
 }

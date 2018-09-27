@@ -70,6 +70,7 @@ public:
   AbstractPipelineItem* parent() const;
   virtual ItemType getItemType() const = 0;
 
+  bool hasIndex(int row, int column);
   virtual int childCount() const = 0;
   int rowCount() const;
   int columnCount() const;
