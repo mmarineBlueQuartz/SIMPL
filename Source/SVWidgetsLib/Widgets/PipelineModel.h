@@ -265,6 +265,11 @@ public:
   bool addPipeline(FilterPipeline::Pointer pipeline, int insertIndex);
 
   /**
+   * @brief Removes the pipeline at the given index
+   */
+  bool removePipeline(int index);
+
+  /**
    * @brief Connects the target PipelineItem
    * @param item
    */

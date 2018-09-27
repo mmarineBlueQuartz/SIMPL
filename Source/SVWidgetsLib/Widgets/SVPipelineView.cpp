@@ -337,89 +337,25 @@ void SVPipelineView::pasteFilters(int insertIndex, bool useAnimationOnFirstRun)
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+void SVPipelineView::createNewPipeline()
+{
+  getPipelineModel()->appendPipeline(FilterPipeline::New());
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void SVPipelineView::deletePipeline(int index)
+{
+  getPipelineModel()->removePipeline(index);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 void SVPipelineView::preflightPipeline()
 {
-  return;
-
-  if(m_BlockPreflight)
-  {
-    return;
-  }
-  qDebug() << "----------- SVPipelineView::preflightPipeline Begin --------------";
-  emit clearIssuesTriggered();
-
-  PipelineModel* model = getPipelineModel();
-
-  // Create a Pipeline Object and fill it with the filters from this View
-  FilterPipeline::Pointer pipeline = getPipelineModel()->pipeline(currentIndex());
-
-  qDebug() << "Prepping Filters for preflight... ";
-
-  FilterPipeline::FilterContainerType filters = pipeline->getFilterContainer();
-#if 0
-  for(int i = 0; i < filters.size(); i++)
-  {
-    filters.at(i)->setErrorCondition(0);
-    filters.at(i)->setCancel(false);
-
-    QModelIndex childIndex = model->index(i, PipelineItem::Contents);
-    if(childIndex.isValid())
-    {
-      model->setData(childIndex, static_cast<int>(PipelineItem::ErrorState::Ok), PipelineModel::ErrorStateRole);
-      AbstractFilter::Pointer filter = model->filter(childIndex);
-      if(filter->getEnabled() == true)
-      {
-        model->setData(childIndex, static_cast<int>(PipelineItem::WidgetState::Ready), PipelineModel::WidgetStateRole);
-      }
-    }
-  }
-#endif
-
-  //  QSharedPointer<ProgressDialog> progressDialog(new ProgressDialog());
-  //  progressDialog->setWindowTitle("Pipeline Preflighting");
-  //  QString msg = QString("Please wait for %1 filters to preflight...").arg(pipeline->getFilterContainer().count());
-  //  progressDialog->setLabelText(msg);
-  //  progressDialog->show();
-  //  progressDialog->raise();
-  //  progressDialog->activateWindow();
-
-  // Preflight the pipeline
-  qDebug() << "Preflight the Pipeline ... ";
-
-  int err = pipeline->preflightPipeline();
-  if(err < 0)
-  {
-    // FIXME: Implement error handling.
-  }
-
-  qDebug() << "Checking for Filters with Errors or Warnings ... ";
-
-  int count = pipeline->getFilterContainer().size();
-  // Now that the preflight has been executed loop through the filters and check their error condition and set the
-  // outline on the filter widget if there were errors or warnings
-#if 0
-  for(qint32 i = 0; i < count; ++i)
-  {
-    QModelIndex childIndex = model->index(i, PipelineItem::Contents);
-    if(childIndex.isValid())
-    {
-      AbstractFilter::Pointer filter = model->filter(childIndex);
-      if(filter->getWarningCondition() < 0)
-      {
-        model->setData(childIndex, static_cast<int>(PipelineItem::ErrorState::Warning), PipelineModel::ErrorStateRole);
-      }
-      if(filter->getErrorCondition() < 0)
-      {
-        model->setData(childIndex, static_cast<int>(PipelineItem::ErrorState::Error), PipelineModel::ErrorStateRole);
-      }
-    }
-  }
-#endif
-
-  emit preflightFinished(pipeline, err);
-  updateFilterInputWidgetIndices();
-  qDebug() << "----------- SVPipelineView::preflightPipeline End --------------";
-  
+  getCurrentPipeline()->preflightPipeline();
 }
 
 // -----------------------------------------------------------------------------
@@ -1691,6 +1627,14 @@ void SVPipelineView::requestPipelineItemContextMenu(const QPoint& pos, const QMo
     getPipelineModel()->executePipeline(index);
   });
   menu.addAction(actionExecutePipeline);
+  menu.addSeparator();
+
+  // Remove Pipeline
+  QAction* actionRemovePipeline = new QAction("Delete Pipeline");
+  connect(actionRemovePipeline, &QAction::triggered, [this, index] {
+    getPipelineModel()->removePipeline(index.row());
+  });
+  menu.addAction(actionRemovePipeline);
   menu.addSeparator();
 
   menu.addAction(m_ActionPaste);

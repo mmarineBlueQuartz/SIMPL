@@ -275,8 +275,18 @@ public slots:
   void pasteFilters(int insertIndex = -1, bool useAnimationOnFirstRun = true);
 
   /**
+   * @brief createPipeline
+   */
+  void createNewPipeline();
+  
+  /**
+   * @brief deletePipeline
+   * @param index
+   */
+  void deletePipeline(int index);
+
+  /**
    * @brief preflightPipeline
-   * @param pipelineIndex
    */
   void preflightPipeline();
 

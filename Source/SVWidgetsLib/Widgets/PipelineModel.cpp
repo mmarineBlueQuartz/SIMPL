@@ -463,6 +463,11 @@ QModelIndex PipelineModel::index(int row, int column, const QModelIndex& parent)
 // -----------------------------------------------------------------------------
 bool PipelineModel::insertRows(int position, int rows, const QModelIndex& parent)
 {
+  if(position < 0 || rows <= 0)
+  {
+    return false;
+  }
+
   AbstractPipelineItem* parentItem = getItem(parent);
   bool success;
 
@@ -673,6 +678,14 @@ bool PipelineModel::addPipeline(FilterPipeline::Pointer pipeline, int insertInde
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+bool PipelineModel::removePipeline(int index)
+{
+  return removeRows(index, 1);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 void PipelineModel::connectItem(AbstractPipelineItem* item)
 {
   QModelIndex index = itemIndex(item);
@@ -698,11 +711,11 @@ void PipelineModel::connectPipelineItem(PipelineItem* item)
   endInsertRows();
 
   connect(item, &PipelineItem::filterAdded, [=](int index) {
-    insertRows(index, index, item->pipelineIndex());
+    insertRows(index, 1, item->pipelineIndex());
   });
 
   connect(item, &PipelineItem::filterRemoved, [=](int index) {
-    removeRows(index, index, item->pipelineIndex());
+    removeRows(index, 1, item->pipelineIndex());
   });
 
   connect(item, &PipelineItem::pipelineUpdated, [=] {
@@ -732,8 +745,7 @@ void PipelineModel::connectPipelineItem(PipelineItem* item)
 void PipelineModel::updateData(AbstractPipelineItem* item)
 {
   QModelIndex index = itemIndex(item);
-  QVector<int> roles = { Qt::DisplayRole, Qt::DecorationRole, Qt::ToolTipRole };
-  emit dataChanged(index, index, roles);
+  emit dataChanged(index, index);
 }
 
 // -----------------------------------------------------------------------------
