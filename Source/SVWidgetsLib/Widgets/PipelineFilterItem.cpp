@@ -68,11 +68,13 @@ QVariant PipelineFilterItem::data(int role) const
   {
     if(m_Filter->getErrorCondition() < 0)
     {
-      return QColor(Qt::GlobalColor::red);
+      return QIcon(":/SIMPL/icons/images/bullet_ball_red.png");
+      //return QColor(Qt::GlobalColor::red);
     }
     else if(m_Filter->getWarningCondition() < 0)
     {
-      return QColor(Qt::GlobalColor::darkYellow);
+      return QIcon(":/SIMPL/icons/images/warning.png");
+      //return QColor(Qt::GlobalColor::darkYellow);
     }
     else
     {

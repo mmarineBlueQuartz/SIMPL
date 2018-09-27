@@ -692,11 +692,14 @@ QVariant PipelineItem::data(int role) const
     switch(m_TempPipeline->getErrorState())
     {
     case FilterPipeline::ErrorState::Ok:
-      return QColor(Qt::GlobalColor::green);
+      return QIcon(":/SIMPL/icons/images/bullet_ball_green.png");
+      //return QColor(Qt::GlobalColor::green);
     case FilterPipeline::ErrorState::Error:
-      return QColor(Qt::GlobalColor::red);
+      return QIcon(":/SIMPL/icons/images/bullet_ball_red.png");
+      //return QColor(Qt::GlobalColor::red);
     case FilterPipeline::ErrorState::Warning:
-      return QColor(Qt::GlobalColor::darkYellow);
+      return QIcon(":/SIMPL/icons/images/warning.png");
+      //return QColor(Qt::GlobalColor::darkYellow);
     }
   }
   else if(role == Qt::ToolTipRole)
