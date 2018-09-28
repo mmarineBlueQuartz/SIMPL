@@ -67,8 +67,8 @@ public:
 		UInt32ArrayType::Pointer mcArray1 = UInt32ArrayType::CreateArray(QVector<size_t>(1, 10), QVector<size_t>(1, 5), "MultiComponent Array uint32_t");
 		fillDataArray<uint32_t>(mcArray1);
 
-//		BoolArrayType::Pointer mcArray2 = BoolArrayType::CreateArray(QVector<size_t>(1, 10), QVector<size_t>(1, 5), "MultiComponent Array bool");
-//		fillDataArray<bool>(mcArray2);
+		BoolArrayType::Pointer mcArray2 = BoolArrayType::CreateArray(QVector<size_t>(1, 10), QVector<size_t>(1, 5), "MultiComponent Array bool");
+		fillDataArray<bool>(mcArray2);
 
 		UCharArrayType::Pointer mcArray3 = UCharArrayType::CreateArray(QVector<size_t>(1, 10), QVector<size_t>(1, 5), "MultiComponent Array unsigned char");
 		fillDataArray<unsigned char>(mcArray3);
@@ -104,7 +104,7 @@ public:
 		fillDataArray<size_t>(mcArray13);
 	
 		am1->addAttributeArray("MultiComponent Array uint32_t", mcArray1);
-		//am1->addAttributeArray("MultiComponent Array bool", mcArray2);
+		am1->addAttributeArray("MultiComponent Array bool", mcArray2);
 		am1->addAttributeArray("MultiComponent Array unsigned char", mcArray3);
 		am1->addAttributeArray("MultiComponent Array int8_t", mcArray4);
 		am1->addAttributeArray("MultiComponent Array uint8_t", mcArray5);
