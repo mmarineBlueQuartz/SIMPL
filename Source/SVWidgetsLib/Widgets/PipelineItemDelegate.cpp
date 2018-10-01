@@ -628,7 +628,7 @@ bool PipelineItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model,
         if(deleteBtnRect.contains(mouseEvent->pos()) && m_View->getPipelineState() != SVPipelineView::PipelineViewState::Running)
         {
           AbstractFilter::Pointer filter = pipelineModel->filter(index);
-          m_View->removeFilter(pipeline, filter);
+          m_View->removeFilter(filter);
           return true;
         }
         else if(disableBtnRect.contains(mouseEvent->pos()) && m_View->getPipelineState() != SVPipelineView::PipelineViewState::Running)

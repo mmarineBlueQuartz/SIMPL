@@ -52,8 +52,8 @@ class SVPipelineView;
 class SVWidgetsLib_EXPORT RemoveFilterCommand : public QUndoCommand
 {
 public:
-  RemoveFilterCommand(AbstractFilter::Pointer filter, FilterPipeline::Pointer pipelien, QString actionText, bool useAnimationOnFirstRun = true, QUndoCommand* parent = 0);
-  RemoveFilterCommand(std::vector<AbstractFilter::Pointer> filters, FilterPipeline::Pointer pipeline, QString actionText, bool useAnimationOnFirstRun = true, QUndoCommand* parent = 0);
+  RemoveFilterCommand(AbstractFilter::Pointer filter, PipelineModel* model, QString actionText, bool useAnimationOnFirstRun = true, QUndoCommand* parent = 0);
+  RemoveFilterCommand(std::vector<AbstractFilter::Pointer> filters, PipelineModel* model, QString actionText, bool useAnimationOnFirstRun = true, QUndoCommand* parent = 0);
   ~RemoveFilterCommand() override;
 
   void undo() override;
@@ -61,24 +61,28 @@ public:
   void redo() override;
 
 private:
-  FilterPipeline::Pointer m_Pipeline = nullptr;
+  PipelineModel* m_Model = nullptr;
   std::vector<AbstractFilter::Pointer> m_Filters;
   std::vector<int> m_FilterRows;
+  std::vector<FilterPipeline::Pointer> m_Pipelines;
   bool m_FirstRun = true;
   bool m_UseAnimationOnFirstRun = true;
 
   /**
    * @brief addFilter
    * @param filter
+   * @param pipeline
    * @param insertionIndex
    */
-  void addFilter(AbstractFilter::Pointer filter, int insertionIndex = -1);
+  void addFilter(AbstractFilter::Pointer filter, FilterPipeline::Pointer pipeline, int insertionIndex = -1);
 
   /**
    * @brief removeFilter
    * @param row
    */
   void removeFilter(AbstractFilter::Pointer filter);
+
+  std::set<FilterPipeline::Pointer> getPipelines() const;
 
   RemoveFilterCommand(const RemoveFilterCommand&) = delete; // Copy Constructor Not Implemented
   void operator=(const RemoveFilterCommand&) = delete;      // Move assignment Not Implemented

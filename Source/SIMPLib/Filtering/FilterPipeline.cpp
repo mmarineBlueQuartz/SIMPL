@@ -340,6 +340,7 @@ bool FilterPipeline::pushFront(AbstractFilter::Pointer f)
     return false;
   }
 
+  emit beginAddingFilter(0);
   m_Pipeline.push_front(f);
   updatePrevNextFilters();
   emit filterAdded(0, f);
@@ -357,6 +358,7 @@ bool FilterPipeline::popFront()
   }
 
   AbstractFilter::Pointer f = m_Pipeline[0];
+  emit beginRemovingFilter(0);
   m_Pipeline.pop_front();
   updatePrevNextFilters();
   emit filterRemoved(0, f);
@@ -373,6 +375,7 @@ bool FilterPipeline::pushBack(AbstractFilter::Pointer f)
     return false;
   }
 
+  emit beginAddingFilter(m_Pipeline.size());
   m_Pipeline.push_back(f);
   updatePrevNextFilters();
   emit filterAdded(m_Pipeline.size() - 1, f);
@@ -383,15 +386,17 @@ bool FilterPipeline::pushBack(AbstractFilter::Pointer f)
 // -----------------------------------------------------------------------------
 bool FilterPipeline::popBack()
 {
-  if(m_PipelineState == PipelineState::Running || m_PipelineState == PipelineState::Cancelling && size() > 0)
+  if(m_PipelineState == PipelineState::Running || m_PipelineState == PipelineState::Cancelling || size() <= 0)
   {
     return false;
   }
 
+  int index = m_Pipeline.size() - 1;
+  emit beginRemovingFilter(index);
   AbstractFilter::Pointer f = m_Pipeline.back();
   m_Pipeline.pop_back();
   updatePrevNextFilters();
-  emit filterRemoved(0, f);
+  emit filterRemoved(index, f);
   return true;
 }
 // -----------------------------------------------------------------------------
@@ -404,11 +409,17 @@ bool FilterPipeline::insert(size_t index, AbstractFilter::Pointer f)
     return false;
   }
 
+  if(index > m_Pipeline.size())
+  {
+    index = m_Pipeline.size();
+  }
+
   FilterContainerType::iterator it = m_Pipeline.begin();
-  for(size_t i = 0; i < index; ++i)
+  for(size_t i = 0; i < index && it != m_Pipeline.end(); ++i)
   {
     ++it;
   }
+  emit beginAddingFilter(index);
   m_Pipeline.insert(it, f);
   updatePrevNextFilters();
   emit filterAdded(index, f);
@@ -424,11 +435,17 @@ bool FilterPipeline::erase(size_t index)
     return false;
   }
 
+  if(index > m_Pipeline.size())
+  {
+    index = m_Pipeline.size();
+  }
+
   FilterContainerType::iterator it = m_Pipeline.begin();
   for(size_t i = 0; i < index; ++i)
   {
     ++it;
   }
+  emit beginRemovingFilter(index);
   AbstractFilter::Pointer f = (*it);
   m_Pipeline.erase(it);
   updatePrevNextFilters();
@@ -445,6 +462,7 @@ bool FilterPipeline::clear()
     return false;
   }
 
+  emit beginClearingPipeline();
   for(FilterContainerType::iterator iter = m_Pipeline.begin(); iter != m_Pipeline.end(); ++iter)
   {
     (*iter)->setPreviousFilter(AbstractFilter::NullPointer());
@@ -488,6 +506,7 @@ AbstractFilter::Pointer FilterPipeline::removeFirstFilterByName(const QString& n
   {
     if((*it)->getHumanLabel().compare(name) == 0)
     {
+      emit beginRemovingFilter(position);
       f = *it;
       m_Pipeline.erase(it);
       emit filterRemoved(position, f);

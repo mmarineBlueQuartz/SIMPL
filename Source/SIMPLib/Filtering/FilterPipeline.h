@@ -288,6 +288,12 @@ signals:
   * @brief The signal is emitted when changes are applied to the FilterPipeline
   */
   void pipelineWasEdited();
+  
+  /**
+  * @brief This signal is emitted before a filter is added
+  * @param position
+  */
+  void beginAddingFilter(int position);
 
   /**
    * @brief This signal is emitted when a filter is added
@@ -297,11 +303,19 @@ signals:
   void filterAdded(int position, AbstractFilter::Pointer filter);
 
   /**
+   * @brief This signal is called before a filter is removed
+   * @return position
+   */
+  void beginRemovingFilter(int position);
+
+  /**
    * @brief This signal is emitted when a filter is removed
    * @param position
    * @param filter
    */
   void filterRemoved(int position, AbstractFilter::Pointer filter);
+
+  void beginClearingPipeline();
 
   /**
    * @brief This signal is emitted when the pipeline is cleared

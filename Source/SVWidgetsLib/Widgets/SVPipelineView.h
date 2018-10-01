@@ -250,10 +250,9 @@ public slots:
 
   /**
    * @brief Removes filter from the current model
-   * @param pipeline
    * @param filter
    */
-  void removeFilter(FilterPipeline::Pointer pipeline, AbstractFilter::Pointer filter, bool useAnimationOnFirstRun = true);
+  void removeFilter(AbstractFilter::Pointer filter, bool useAnimationOnFirstRun = true);
 
   /**
    * @brief Removes multiple filters from the current model
@@ -263,17 +262,15 @@ public slots:
 
   /**
    * @brief Cuts filter from the current model
-   * @param pipeline
    * @param filter
    */
-  void cutFilter(FilterPipeline::Pointer pipeline, AbstractFilter::Pointer filter, bool useAnimationOnFirstRun = true);
+  void cutFilter(AbstractFilter::Pointer filter, bool useAnimationOnFirstRun = true);
 
   /**
    * @brief Cuts multiple filters from the current model
-   * @param pipeline
    * @param filters
    */
-  void cutFilters(FilterPipeline::Pointer pipeline, std::vector<AbstractFilter::Pointer> filters, bool useAnimationOnFirstRun = true);
+  void cutFilters(std::vector<AbstractFilter::Pointer> filters, bool useAnimationOnFirstRun = true);
 
   /**
    * @brief Copies the currently selected filters from the current model into the system clipboard

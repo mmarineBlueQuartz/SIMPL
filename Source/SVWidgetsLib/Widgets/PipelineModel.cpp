@@ -493,6 +493,24 @@ QModelIndex PipelineModel::index(int row, int column, const QModelIndex& parent)
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+void PipelineModel::beginInsertingFilter(PipelineItem* item, int index)
+{
+  QModelIndex pipelineIndex = itemIndex(item);
+  beginInsertRows(pipelineIndex, index, index);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineModel::beginRemovingFilter(PipelineItem* item, int index)
+{
+  QModelIndex pipelineIndex = itemIndex(item);
+  beginRemoveRows(pipelineIndex, index, index);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 bool PipelineModel::insertRows(int position, int rows, const QModelIndex& parent)
 {
   if(position < 0 || rows <= 0)
@@ -506,6 +524,11 @@ bool PipelineModel::insertRows(int position, int rows, const QModelIndex& parent
   beginInsertRows(parent, position, position + rows - 1);
   success = parentItem->insertChildren(position, rows);
   endInsertRows();
+
+  if(success)
+  {
+    updateData(parentItem);
+  }
 
   return success;
 }
@@ -532,6 +555,11 @@ bool PipelineModel::removeRows(int position, int rows, const QModelIndex& parent
   beginRemoveRows(parent, position, position + rows - 1);
   success = parentItem->removeChildren(position, rows);
   endRemoveRows();
+
+  if(success)
+  {
+    updateData(parentItem);
+  }
 
   return success;
 }
@@ -757,12 +785,20 @@ void PipelineModel::connectPipelineItem(PipelineItem* item)
   beginInsertRows(QModelIndex(), itemNum, itemNum);
   endInsertRows();
 
-  connect(item, &PipelineItem::filterAdded, [=](int index) {
-    insertRows(index, 1, item->pipelineIndex());
+  connect(item, &PipelineItem::beginAddingFilter, this, [=](int index) {
+    beginInsertingFilter(item, index);
   });
 
-  connect(item, &PipelineItem::filterRemoved, [=](int index) {
-    removeRows(index, 1, item->pipelineIndex());
+  connect(item, &PipelineItem::beginRemovingFilter, this, [=](int index) {
+    beginRemovingFilter(item, index);
+  });
+
+  connect(item, &PipelineItem::filterAdded, this, [=](int index) {
+    endInsertRows();
+  });
+
+  connect(item, &PipelineItem::filterRemoved, this, [=](int index) {
+    endRemoveRows();
   });
 
   connect(item, &PipelineItem::pipelineUpdated, [=] {

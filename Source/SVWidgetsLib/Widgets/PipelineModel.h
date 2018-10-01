@@ -324,6 +324,8 @@ private:
   FilterPipeline::Pointer readPipelineFromFile(const QString& filePath);
   QModelIndex itemIndex(AbstractPipelineItem* item);
   void connectItem(AbstractPipelineItem* item);
+  void beginInsertingFilter(PipelineItem* item, int index);
+  void beginRemovingFilter(PipelineItem* item, int index);
 
   PipelineModel(const PipelineModel&);  // Copy Constructor Not Implemented
   void operator=(const PipelineModel&); // Operator '=' Not Implemented

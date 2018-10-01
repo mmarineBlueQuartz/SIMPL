@@ -88,7 +88,7 @@ void PipelineTreeViewSelectionModel::select(const QItemSelection& selection, QIt
   {
     QModelIndex index = currentSelections[i];
     AbstractPipelineItem::ItemType itemType = static_cast<AbstractPipelineItem::ItemType>(m_PipelineModel->data(index, PipelineModel::Roles::ItemTypeRole).toInt());
-    // If filters are selected and this is a pipeline root index, add it to the deselectList
+    // If filters are selected and this is not a filter index, add it to the deselectList
     if(hasFilters && itemType != AbstractPipelineItem::ItemType::Filter)
     {
       deselectList.append(QItemSelectionRange(index, index));

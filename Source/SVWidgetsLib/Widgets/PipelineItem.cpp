@@ -125,6 +125,8 @@ void PipelineItem::connectPipeline()
     m_FilterItems[filter] = filterItem;
   }
 
+  connect(m_TempPipeline.get(), &FilterPipeline::beginAddingFilter, this, &PipelineItem::beginAddingFilter);
+  connect(m_TempPipeline.get(), &FilterPipeline::beginRemovingFilter, this, &PipelineItem::beginRemovingFilter);
   connect(m_TempPipeline.get(), &FilterPipeline::filterAdded, this, &PipelineItem::addFilter);
   connect(m_TempPipeline.get(), &FilterPipeline::filterRemoved, this, &PipelineItem::removeFilter);
   connect(m_TempPipeline.get(), &FilterPipeline::pipelineFinished, this, &PipelineItem::pipelineUpdated);

@@ -159,7 +159,9 @@ public:
   QString getFilePath() const;
 
 signals:
+  void beginAddingFilter(int index);
   void filterAdded(int index, AbstractFilter::Pointer filter);
+  void beginRemovingFilter(int index);
   void filterRemoved(int index, AbstractFilter::Pointer filter);
   void pipelineUpdated();
   void statusMessage(const QString& msg);
