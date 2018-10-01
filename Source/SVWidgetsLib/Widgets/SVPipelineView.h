@@ -442,8 +442,6 @@ private slots:
 
 private:
   QThread* m_WorkerThread = nullptr;
-  QMetaObject::Connection m_PipelineConnection;
-  FilterPipeline::Pointer m_PipelineInFlight;
   QVector<DataContainerArray::Pointer> m_PreflightDataContainerArrays;
   QList<QObject*> m_PipelineMessageObservers;
 
@@ -533,18 +531,6 @@ private:
    * @param pos
    */
   void requestDefaultContextMenu(const QPoint& pos);
-
-  /**
-   * @brief addDropIndicator
-   * @param text
-   * @param insertIndex
-   */
-  void addDropIndicator(const QString& text, int insertIndex);
-
-  /**
-   * @brief removeDropIndicator
-   */
-  void removeDropIndicator();
 
   /**
    * @brief findNextRow
