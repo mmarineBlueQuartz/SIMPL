@@ -144,11 +144,17 @@ public:
   FilterPipeline::Pointer getFilterPipelineCopy();
 
   /**
+   * @brief Returns the file path for the current item
+   * @return
+   */
+  QString getCurrentFilePath() const;
+
+  /**
    * @brief writePipeline
    * @param outputPath
    * @return
    */
-  int writePipeline(const QString& outputPath);
+  int writeCurrentPipeline(const QString& outputPath);
 
   /**
    * @brief isPipelineCurrentlyRunning
@@ -222,28 +228,32 @@ public slots:
   /**
    * @brief Adds a filter with the specified filterClassName to the current model
    * @param filterClassName
+   * @param pipeline
    */
-  void addFilterFromClassName(const QString& filterClassName, int insertIndex = -1, bool useAnimationOnFirstRun = true);
+  void addFilterFromClassName(const QString& filterClassName, FilterPipeline::Pointer pipeline = nullptr, int insertIndex = -1, bool useAnimationOnFirstRun = true);
 
   /**
    * @brief Adds a filter to the current model at insertIndex.  If insertIndex is < 0,
    * the filter gets appended to the end of the model
+   * @param pipeline
    * @param filter
    */
-  void addFilter(AbstractFilter::Pointer filter, int insertIndex = -1, bool useAnimationOnFirstRun = true);
+  void addFilter(FilterPipeline::Pointer pipeline, AbstractFilter::Pointer filter, int insertIndex = -1, bool useAnimationOnFirstRun = true);
 
   /**
    * @brief Adds multiple filters to the current model.  If insertIndex is < 0,
    * the filters get appended to the end of the model
+   * @param pipeline
    * @param filters
    */
-  void addFilters(std::vector<AbstractFilter::Pointer> filters, int insertIndex = -1, bool useAnimationOnFirstRun = true);
+  void addFilters(FilterPipeline::Pointer pipeline, std::vector<AbstractFilter::Pointer> filters, int insertIndex = -1, bool useAnimationOnFirstRun = true);
 
   /**
    * @brief Removes filter from the current model
+   * @param pipeline
    * @param filter
    */
-  void removeFilter(AbstractFilter::Pointer filter, bool useAnimationOnFirstRun = true);
+  void removeFilter(FilterPipeline::Pointer pipeline, AbstractFilter::Pointer filter, bool useAnimationOnFirstRun = true);
 
   /**
    * @brief Removes multiple filters from the current model
@@ -253,15 +263,17 @@ public slots:
 
   /**
    * @brief Cuts filter from the current model
+   * @param pipeline
    * @param filter
    */
-  void cutFilter(AbstractFilter::Pointer filter, bool useAnimationOnFirstRun = true);
+  void cutFilter(FilterPipeline::Pointer pipeline, AbstractFilter::Pointer filter, bool useAnimationOnFirstRun = true);
 
   /**
    * @brief Cuts multiple filters from the current model
+   * @param pipeline
    * @param filters
    */
-  void cutFilters(std::vector<AbstractFilter::Pointer> filters, bool useAnimationOnFirstRun = true);
+  void cutFilters(FilterPipeline::Pointer pipeline, std::vector<AbstractFilter::Pointer> filters, bool useAnimationOnFirstRun = true);
 
   /**
    * @brief Copies the currently selected filters from the current model into the system clipboard
@@ -270,9 +282,10 @@ public slots:
 
   /**
    * @brief Pastes multiple filters from the system clipboard to the current model
+   * @param pipeline
    * @param insertIndex
    */
-  void pasteFilters(int insertIndex = -1, bool useAnimationOnFirstRun = true);
+  void pasteFilters(FilterPipeline::Pointer pipeline, int insertIndex = -1, bool useAnimationOnFirstRun = true);
 
   /**
    * @brief createPipeline
