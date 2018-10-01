@@ -97,6 +97,7 @@
 #include "SVWidgetsLib/Widgets/util/RemoveFilterCommand.h"
 #include "SVWidgetsLib/Widgets/DataStructureWidget.h"
 #include "SVWidgetsLib/Widgets/IssuesWidget.h"
+#include "SVWidgetsLib/Widgets/PipelineTreeViewSelectionModel.h"
 #include "SVWidgetsLib/Widgets/ProgressDialog.h"
 #include "SVWidgetsLib/Widgets/StandardOutputWidget.h"
 #include "SVWidgetsLib/Widgets/SVStyle.h"
@@ -134,6 +135,15 @@ SVPipelineView::~SVPipelineView()
 void SVPipelineView::setupGui()
 {
   setHeaderHidden(true);
+
+  PipelineModel* model = new PipelineModel(this);
+  //model->setMaxNumberOfPipelines(1);
+  setModel(model);
+
+  // Selection Mode / Model
+  setSelectionMode(SelectionMode::ExtendedSelection);
+  PipelineTreeViewSelectionModel* selectionModel = new PipelineTreeViewSelectionModel(model);
+  setSelectionModel(selectionModel);
 
   // Delete action if it exists
   delete m_ActionEnableFilter;

@@ -37,6 +37,7 @@ set(SVWidgetsLib_Widgets_MOC_HDRS
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/StatusBarWidget.h
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/StatusBarButton.h
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/StatusBarIssuesButton.h
+  ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineTreeViewSelectionModel.h
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/PopUpWidget.h
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/ProgressDialog.h
   
@@ -93,6 +94,7 @@ set(SVWidgetsLib_Widgets_SRCS
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineModel.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineItem.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineRootItem.cpp
+  ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineTreeViewSelectionModel.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineView.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/StatusBarWidget.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/StatusBarButton.cpp
