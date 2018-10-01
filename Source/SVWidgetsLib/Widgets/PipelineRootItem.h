@@ -76,8 +76,8 @@ public:
   bool setData(int role, const QVariant& value);
   Qt::ItemFlags flags() const override;
 
-  PipelineItem* insertPipeline(int position, FilterPipeline::Pointer pipeline);
-  PipelineItem* appendPipeline(FilterPipeline::Pointer pipeline);
+  PipelineItem* insertPipeline(int position, QString filePath, FilterPipeline::Pointer pipeline);
+  PipelineItem* appendPipeline(QString filePath, FilterPipeline::Pointer pipeline);
 
   bool removePipelineAtIndex(int position);
   bool removePipeline(FilterPipeline::Pointer pipeline);

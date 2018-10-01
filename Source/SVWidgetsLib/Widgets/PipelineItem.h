@@ -54,10 +54,8 @@ class SVWidgetsLib_EXPORT PipelineItem : public AbstractPipelineItem
   Q_OBJECT
 
 public:
-  PipelineItem(FilterPipeline::Pointer pipeline, PipelineRootItem* parent);
+  PipelineItem(QString filePath, FilterPipeline::Pointer pipeline, PipelineRootItem* parent);
   virtual ~PipelineItem();
-
-  SIMPL_INSTANCE_PROPERTY(QString, ItemTooltip)
 
   /**
    * @brief Returns the saved pipeline name;
@@ -158,6 +156,7 @@ public:
   QList<QObject*> getPipelineMessageObservers() const;
   void addPipelineMessageObserver(QObject* observer);
   void stdOutMessage(const QString& msg);
+  QString getFilePath() const;
 
 signals:
   void filterAdded(int index, AbstractFilter::Pointer filter);

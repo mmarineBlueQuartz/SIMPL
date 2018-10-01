@@ -90,7 +90,7 @@ int PipelineRootItem::childCount() const
 bool PipelineRootItem::insertChild(int position, AbstractPipelineItem* child)
 {
   FilterPipeline::Pointer pipeline = FilterPipeline::New();
-  return insertPipeline(position, pipeline);
+  return insertPipeline(position, "", pipeline);
 }
 
 // -----------------------------------------------------------------------------
@@ -101,7 +101,7 @@ bool PipelineRootItem::insertChildren(int position, int count)
   for(int i = 0; i < count; i++)
   {
     FilterPipeline::Pointer pipeline = FilterPipeline::New();
-    if(false == insertPipeline(position + count, pipeline))
+    if(false == insertPipeline(position + count, "", pipeline))
     {
       return false;
     }
@@ -193,7 +193,7 @@ int PipelineRootItem::indexOf(FilterPipeline::Pointer pipeline) const
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-PipelineItem* PipelineRootItem::insertPipeline(int position, FilterPipeline::Pointer pipeline)
+PipelineItem* PipelineRootItem::insertPipeline(int position, QString filePath, FilterPipeline::Pointer pipeline)
 {
   if(nullptr == pipeline)
   {
@@ -205,7 +205,7 @@ PipelineItem* PipelineRootItem::insertPipeline(int position, FilterPipeline::Poi
     position = childCount();
   }
 
-  PipelineItem* pipelineItem = new PipelineItem(pipeline, this);
+  PipelineItem* pipelineItem = new PipelineItem(filePath, pipeline, this);
   m_PipelineItems.insert(position, pipelineItem);
   model()->connectPipelineItem(pipelineItem);
   emit modified();
@@ -215,9 +215,9 @@ PipelineItem* PipelineRootItem::insertPipeline(int position, FilterPipeline::Poi
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-PipelineItem* PipelineRootItem::appendPipeline(FilterPipeline::Pointer pipeline)
+PipelineItem* PipelineRootItem::appendPipeline(QString filePath, FilterPipeline::Pointer pipeline)
 {
-  return insertPipeline(childCount(), pipeline);
+  return insertPipeline(childCount(), filePath, pipeline);
 }
 
 // -----------------------------------------------------------------------------

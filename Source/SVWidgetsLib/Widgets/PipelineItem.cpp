@@ -48,10 +48,10 @@
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-PipelineItem::PipelineItem(FilterPipeline::Pointer pipeline, PipelineRootItem* parent)
+PipelineItem::PipelineItem(QString filePath, FilterPipeline::Pointer pipeline, PipelineRootItem* parent)
 : AbstractPipelineItem(parent)
 , m_SavedPipeline(pipeline)
-, m_ItemTooltip("")
+, m_CurrentPath(filePath)
 {
   m_TempPipeline = m_SavedPipeline->deepCopy();
   m_TempPipeline->setName(m_SavedPipeline->getName());
@@ -448,7 +448,7 @@ bool PipelineItem::insertChildren(int position, int count)
 // -----------------------------------------------------------------------------
 AbstractPipelineItem* PipelineItem::child(int number) const
 {
-  if(number < 0 || number > m_FilterItems.count())
+  if(number < 0 || number >= m_FilterItems.count())
   {
     return nullptr;
   }
@@ -698,7 +698,7 @@ QVariant PipelineItem::data(int role) const
   }
   else if(role == Qt::ToolTipRole)
   {
-    return "";
+    return m_CurrentPath;
     //return m_SavedPipeline->filePath();
   }
   else if(role == PipelineModel::Roles::ErrorStateRole)
@@ -774,4 +774,12 @@ void PipelineItem::clearIssues()
 void PipelineItem::stdOutMessage(const QString& msg)
 {
   m_StdOutMsg += msg + "\n";
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+QString PipelineItem::getFilePath() const
+{
+  return m_CurrentPath;
 }
