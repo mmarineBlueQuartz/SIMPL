@@ -114,7 +114,7 @@ class SVWidgetsLib_EXPORT FilterLibraryToolboxWidget : public QWidget, private U
      * @brief filterItemDoubleClicked
      * @param filterName
      */
-    void filterItemDoubleClicked(const QString& filterName, int insertIndex = -1, bool useAnimationOnFirstRun = true);
+    void filterItemDoubleClicked(const QString& filterName);
 
     /**
      * @brief filterListGenerated

@@ -144,14 +144,18 @@ void PipelineModel::setFilter(const QModelIndex& index, AbstractFilter::Pointer 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-QModelIndex PipelineModel::indexOfFilter(AbstractFilter* filter, const QModelIndex& parent)
+QModelIndex PipelineModel::indexOfFilter(AbstractFilter::Pointer filter)
 {
-  for(int i = 0; i < rowCount(parent); i++)
+  for(PipelineItem* item : *m_RootItem)
   {
-    QModelIndex childIndex = index(i, PipelineItem::Contents, parent);
-    if(this->filter(childIndex).get() == filter)
+    QModelIndex parent = itemIndex(item);
+    for(int i = 0; i < item->rowCount(); i++)
     {
-      return childIndex;
+      QModelIndex childIndex = index(i, PipelineItem::Contents, parent);
+      if(this->filter(childIndex) == filter)
+      {
+        return childIndex;
+      }
     }
   }
 
@@ -176,6 +180,20 @@ FilterPipeline::Pointer PipelineModel::pipeline(const QModelIndex& index) const
   }
 
   return pipelineItem->getCurrentPipeline();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+FilterPipeline::Pointer PipelineModel::getPipelineContaining(const QModelIndex& index) const
+{
+  PipelineItem* item = getPipelineItem(index);
+  if(item)
+  {
+    return item->getCurrentPipeline();
+  }
+
+  return FilterPipeline::NullPointer();
 }
 
 // -----------------------------------------------------------------------------
@@ -207,6 +225,20 @@ QModelIndex PipelineModel::indexOfPipeline(FilterPipeline::Pointer pipeline, con
   }
 
   return QModelIndex();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+QString PipelineModel::getPipelinePath(const QModelIndex& index) const
+{
+  PipelineItem* item = getPipelineItem(index);
+  if(item)
+  {
+    return item->getFilePath();
+  }
+
+  return QString::Null();
 }
 
 // -----------------------------------------------------------------------------
@@ -246,7 +278,7 @@ int PipelineModel::openPipeline(const QString& filePath, int insertIndex)
 
       FilterPipeline::Pointer pipeline = FilterPipeline::New();
       pipeline->pushBack(reader);
-      addPipeline(pipeline, insertIndex);
+      insertPipeline(insertIndex, filePath, pipeline);
       return 1;
     }
     //}
@@ -261,7 +293,7 @@ int PipelineModel::openPipeline(const QString& filePath, int insertIndex)
     emit standardOutputMessageGenerated(tr("The pipeline was not read correctly from file '%1'. '%2' is an unsupported file extension.").arg(name).arg(ext));
     return -1;
   }
-  PipelineItem* item = m_RootItem->insertPipeline(insertIndex, pipeline->deepCopy());
+  PipelineItem* item = m_RootItem->insertPipeline(insertIndex, filePath, pipeline->deepCopy());
   // Notify user of successful read
   emit statusMessageGenerated(tr("Opened \"%1\" Pipeline").arg(baseName));
   item->stdOutMessage(tr("Opened \"%1\" Pipeline").arg(baseName));
@@ -489,6 +521,12 @@ bool PipelineModel::removeRows(int position, int rows, const QModelIndex& parent
   }
 
   AbstractPipelineItem* parentItem = getItem(parent);
+  if(dynamic_cast<PipelineItem*>(parentItem))
+  {
+    // FilterPipelines are in charge of removing items from PipelineItems
+    updateData(parentItem);
+    return true;
+  }
   bool success = true;
 
   beginRemoveRows(parent, position, position + rows - 1);
@@ -662,17 +700,26 @@ bool PipelineModel::isEmpty()
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void PipelineModel::appendPipeline(FilterPipeline::Pointer pipeline)
+FilterPipeline::Pointer PipelineModel::createPipeline()
 {
-   m_RootItem->insertPipeline(m_RootItem->childCount(), pipeline);
+  PipelineItem* item = m_RootItem->insertPipeline(m_RootItem->childCount(), "", FilterPipeline::New());
+  return item->getCurrentPipeline();
 }
 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-bool PipelineModel::addPipeline(FilterPipeline::Pointer pipeline, int insertIndex)
+bool PipelineModel::appendPipeline(QString filePath, FilterPipeline::Pointer pipeline)
 {
-  return nullptr != m_RootItem->insertPipeline(insertIndex, pipeline);
+   return insertPipeline(m_RootItem->childCount(), filePath, pipeline);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+bool PipelineModel::insertPipeline(int insertIndex, QString filePath, FilterPipeline::Pointer pipeline)
+{
+  return nullptr != m_RootItem->insertPipeline(insertIndex, filePath, pipeline);
 }
 
 // -----------------------------------------------------------------------------

@@ -101,12 +101,11 @@ public:
   void setFilter(const QModelIndex& index, AbstractFilter::Pointer filter);
 
   /**
-   * @brief Returns the index of the given filter with specified parent
+   * @brief Returns the index of the given filter
    * @param filter
-   * @param parent
    * @return
    */
-  QModelIndex indexOfFilter(AbstractFilter* filter, const QModelIndex& parent = QModelIndex());
+  QModelIndex indexOfFilter(AbstractFilter::Pointer filter);
 
   /**
    * @brief Returns the FilterPipeline at the given index
@@ -114,6 +113,13 @@ public:
    * @return
    */
   FilterPipeline::Pointer pipeline(const QModelIndex& index) const;
+
+  /**
+   * @brief Returns the FilterPipeline at the given index
+   * @param index
+   * @return
+   */
+  FilterPipeline::Pointer getPipelineContaining(const QModelIndex& index) const;
 
   FilterPipeline::Pointer lastPipeline() const;
 
@@ -251,18 +257,27 @@ public:
   QList<QObject*> getPipelineMessageObservers();
 
   /**
-   * @brief Appends the given pipeline into the model
-   * @param pipeline
+   * @brief Creates and returns a new FilterPipeline for the model
+   * @return
    */
-  void appendPipeline(FilterPipeline::Pointer pipeline);
+  FilterPipeline::Pointer createPipeline();
+
+  /**
+   * @brief Appends the given pipeline into the model
+   * @param filePath
+   * @param pipeline
+   * @return
+   */
+  bool appendPipeline(QString filePath, FilterPipeline::Pointer pipeline);
 
   /**
    * @brief Inserts the given pipeline into the model
-   * @param pipeline
    * @param insertIndex
+   * @param filePath
+   * @param pipeline
    * @return
    */
-  bool addPipeline(FilterPipeline::Pointer pipeline, int insertIndex);
+  bool insertPipeline(int insertIndex, QString filePath, FilterPipeline::Pointer pipeline);
 
   /**
    * @brief Removes the pipeline at the given index
@@ -275,6 +290,7 @@ public:
    */
   void connectPipelineItem(PipelineItem* item);
 
+  QString getPipelinePath(const QModelIndex& index) const;
   int openPipeline(const QString& filePath, int insertIndex);
   int save(const QModelIndex& index);
   int saveAs(const QModelIndex& index, const QString& outputPath);

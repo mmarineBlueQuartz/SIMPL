@@ -571,6 +571,9 @@ bool PipelineItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model,
   QRect disableBtnRect = deleteBtnRect;
   disableBtnRect.setX(disableBtnRect.x() - ::k_TextMargin - ::k_ButtonSize);
 
+  AbstractFilter::Pointer filter = pipelineModel->filter(index);
+  FilterPipeline::Pointer pipeline = pipelineModel->getPipelineContaining(index);
+
   // Looking for click in the delete button area
   QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
   if(mouseEvent != nullptr)
@@ -625,7 +628,7 @@ bool PipelineItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model,
         if(deleteBtnRect.contains(mouseEvent->pos()) && m_View->getPipelineState() != SVPipelineView::PipelineViewState::Running)
         {
           AbstractFilter::Pointer filter = pipelineModel->filter(index);
-          m_View->removeFilter(filter);
+          m_View->removeFilter(pipeline, filter);
           return true;
         }
         else if(disableBtnRect.contains(mouseEvent->pos()) && m_View->getPipelineState() != SVPipelineView::PipelineViewState::Running)
