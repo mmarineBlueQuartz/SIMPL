@@ -284,3 +284,35 @@ Qt::ItemFlags PipelineRootItem::flags() const
 {
   return Qt::ItemIsDropEnabled;
 }
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+PipelineRootItem::const_iterator PipelineRootItem::begin() const
+{
+  return m_PipelineItems.begin();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+PipelineRootItem::const_iterator PipelineRootItem::end() const
+{
+  return m_PipelineItems.end();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+PipelineRootItem::iterator PipelineRootItem::begin()
+{
+  return m_PipelineItems.begin();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+PipelineRootItem::iterator PipelineRootItem::end()
+{
+  return m_PipelineItems.end();
+}

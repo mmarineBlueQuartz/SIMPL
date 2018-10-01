@@ -32,7 +32,6 @@
 #pragma once
 
 #include <QtCore/QList>
-#include <QtCore/QSet>
 #include <QtCore/QVariant>
 #include <QtCore/QVector>
 
@@ -53,6 +52,9 @@ class SVWidgetsLib_EXPORT PipelineRootItem : public AbstractPipelineItem
 public:
   PipelineRootItem(PipelineModel* model);
   virtual ~PipelineRootItem();
+
+  using iterator = QList<PipelineItem*>::iterator;
+  using const_iterator = QList<PipelineItem*>::const_iterator;
 
   /**
   * @brief Returns the PipelineItem type
@@ -81,6 +83,11 @@ public:
 
   bool removePipelineAtIndex(int position);
   bool removePipeline(FilterPipeline::Pointer pipeline);
+
+  const_iterator begin() const;
+  const_iterator end() const;
+  iterator begin();
+  iterator end();
 
   static QString TopLevelString();
 
