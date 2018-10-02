@@ -158,6 +158,8 @@ public:
   void stdOutMessage(const QString& msg);
   QString getFilePath() const;
 
+  void updateDataStructure();
+
 signals:
   void beginAddingFilter(int index);
   void filterAdded(int index, AbstractFilter::Pointer filter);

@@ -437,12 +437,20 @@ private slots:
    */
   void processPipelineMessage(const PipelineMessage& msg);
 
+  /**
+   * @brief listenCurrentPipelineChanged
+   * @param current
+   * @param previous
+   */
+  void listenCurrentPipelineChanged(const QModelIndex& current, const QModelIndex& previous);
+
 private:
   QThread* m_WorkerThread = nullptr;
   QVector<DataContainerArray::Pointer> m_PreflightDataContainerArrays;
   QList<QObject*> m_PipelineMessageObservers;
 
   QString m_CurrentPath;
+  FilterPipeline::Pointer m_CurrentPipeline = nullptr;
 
   QUndoCommand* m_MoveCommand = nullptr;
   QPoint m_DragStartPosition;

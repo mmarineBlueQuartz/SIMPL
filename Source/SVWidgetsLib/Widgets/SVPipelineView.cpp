@@ -87,21 +87,18 @@
 #include "SVWidgetsLib/QtSupport/QtSStyles.h"
 #include "SVWidgetsLib/Widgets/DataStructureWidget.h"
 #include "SVWidgetsLib/Widgets/FilterInputWidget.h"
+#include "SVWidgetsLib/Widgets/IssuesWidget.h"
 #include "SVWidgetsLib/Widgets/PipelineFilterMimeData.h"
 #include "SVWidgetsLib/Widgets/PipelineItem.h"
 #include "SVWidgetsLib/Widgets/PipelineItemDelegate.h"
 #include "SVWidgetsLib/Widgets/PipelineModel.h"
+#include "SVWidgetsLib/Widgets/PipelineTreeViewSelectionModel.h"
 #include "SVWidgetsLib/Widgets/ProgressDialog.h"
+#include "SVWidgetsLib/Widgets/SVStyle.h"
+#include "SVWidgetsLib/Widgets/StandardOutputWidget.h"
 #include "SVWidgetsLib/Widgets/util/AddFilterCommand.h"
 #include "SVWidgetsLib/Widgets/util/MoveFilterCommand.h"
 #include "SVWidgetsLib/Widgets/util/RemoveFilterCommand.h"
-#include "SVWidgetsLib/Widgets/DataStructureWidget.h"
-#include "SVWidgetsLib/Widgets/IssuesWidget.h"
-#include "SVWidgetsLib/Widgets/PipelineTreeViewSelectionModel.h"
-#include "SVWidgetsLib/Widgets/ProgressDialog.h"
-#include "SVWidgetsLib/Widgets/StandardOutputWidget.h"
-#include "SVWidgetsLib/Widgets/SVStyle.h"
-#include "SVWidgetsLib/QtSupport/QtSRecentFileList.h"
 
 // -----------------------------------------------------------------------------
 //
@@ -137,13 +134,8 @@ void SVPipelineView::setupGui()
   setHeaderHidden(true);
 
   PipelineModel* model = new PipelineModel(this);
-  //model->setMaxNumberOfPipelines(1);
+  // model->setMaxNumberOfPipelines(1);
   setModel(model);
-
-  // Selection Mode / Model
-  setSelectionMode(SelectionMode::ExtendedSelection);
-  PipelineTreeViewSelectionModel* selectionModel = new PipelineTreeViewSelectionModel(model);
-  setSelectionModel(selectionModel);
 
   // Delete action if it exists
   delete m_ActionEnableFilter;
@@ -199,6 +191,8 @@ void SVPipelineView::connectSignalsSlots()
   connect(m_ActionPaste, &QAction::triggered, this, &SVPipelineView::listenPasteTriggered);
 
   connect(m_ActionClearPipeline, &QAction::triggered, this, &SVPipelineView::listenClearPipelineTriggered);
+
+  connect(selectionModel(), &QItemSelectionModel::currentChanged, this, &SVPipelineView::listenCurrentPipelineChanged);
 }
 
 // -----------------------------------------------------------------------------
@@ -339,7 +333,7 @@ void SVPipelineView::pasteFilters(FilterPipeline::Pointer pipeline, int insertIn
 
   JsonFilterParametersReader::Pointer jsonReader = JsonFilterParametersReader::New();
   FilterPipeline::Pointer newPipeline = jsonReader->readPipelineFromString(jsonString);
-  FilterPipeline::FilterContainerType container = pipeline->getFilterContainer();
+  FilterPipeline::FilterContainerType container = newPipeline->getFilterContainer();
 
   std::vector<AbstractFilter::Pointer> filters;
   for(int i = 0; i < container.size(); i++)
@@ -399,6 +393,18 @@ void SVPipelineView::processPipelineMessage(const PipelineMessage& msg)
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+void SVPipelineView::listenCurrentPipelineChanged(const QModelIndex& current, const QModelIndex& previous)
+{
+  FilterPipeline::Pointer pipeline = getPipelineModel()->getPipelineContaining(current);
+  if(pipeline)
+  {
+    m_CurrentPipeline = pipeline;
+  }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 void SVPipelineView::updateFilterInputWidgetIndices()
 {
   PipelineModel* model = getPipelineModel();
@@ -450,16 +456,18 @@ FilterPipeline::Pointer SVPipelineView::getFilterPipelineCopy()
 // -----------------------------------------------------------------------------
 FilterPipeline::Pointer SVPipelineView::getCurrentPipeline()
 {
-  FilterPipeline::Pointer currentPipeline = getPipelineModel()->pipeline(currentIndex());
-  if(nullptr != currentPipeline)
+  // Get the current pipeline
+  if(m_CurrentPipeline && getPipelineModel()->containsPipeline(m_CurrentPipeline))
   {
-    return currentPipeline;
+    return m_CurrentPipeline;
   }
+  // Get the last pipeline in the model
   FilterPipeline::Pointer lastPipeline = getPipelineModel()->lastPipeline();
-  if(nullptr != lastPipeline)
+  if(lastPipeline)
   {
     return lastPipeline;
   }
+  // Create a new pipeline in the model
   FilterPipeline::Pointer newPipeline = FilterPipeline::New();
   getPipelineModel()->appendPipeline("", newPipeline);
   return newPipeline;
@@ -553,7 +561,10 @@ std::vector<AbstractFilter::Pointer> SVPipelineView::getSelectedFilters()
   for(int i = 0; i < selectedIndexes.size(); i++)
   {
     AbstractFilter::Pointer filter = model->filter(selectedIndexes[i]);
-    filters.push_back(filter);
+    if(filter)
+    {
+      filters.push_back(filter);
+    }
   }
 
   return filters;
@@ -658,7 +669,7 @@ QPixmap SVPipelineView::getDraggingPixmap(QModelIndexList indexes)
   QPixmap indexPixmap = delegate->createPixmap(indexes[0]);
 
   int dragPixmapWidth = indexPixmap.size().width();
-  int dragPixmapHeight = indexPixmap.size().height() * indexes.size();// +(spacing() * (indexes.size() - 1));
+  int dragPixmapHeight = indexPixmap.size().height() * indexes.size(); // +(spacing() * (indexes.size() - 1));
 
   QPixmap dragPixmap(dragPixmapWidth, dragPixmapHeight);
   dragPixmap.fill(Qt::transparent);
@@ -671,7 +682,7 @@ QPixmap SVPipelineView::getDraggingPixmap(QModelIndexList indexes)
   {
     QPixmap currentPixmap = delegate->createPixmap(indexes[i]);
     p.drawPixmap(0, offset, currentPixmap);
-    offset = offset + indexPixmap.size().height();// +spacing();
+    offset = offset + indexPixmap.size().height(); // +spacing();
   }
   p.end();
 
@@ -824,7 +835,6 @@ void SVPipelineView::dragMoveEvent(QDragMoveEvent* event)
       event->ignore();
       return;
     }
-
   }
   else if(mimedata->hasFormat(SIMPLView::DragAndDrop::FilterListItem))
   {
@@ -886,7 +896,7 @@ int SVPipelineView::findNextRow(const QPoint& pos)
   }
 
   int stepHeight = sizeHintForRow(0);
-  //if(spacing() < stepHeight)
+  // if(spacing() < stepHeight)
   //{
   //  stepHeight = spacing();
   //}
@@ -923,7 +933,7 @@ int SVPipelineView::findPreviousRow(const QPoint& pos)
   }
 
   int stepHeight = sizeHintForRow(0);
-  //if(spacing() < stepHeight)
+  // if(spacing() < stepHeight)
   //{
   //  stepHeight = spacing();
   //}
@@ -964,20 +974,22 @@ void SVPipelineView::dropEvent(QDropEvent* event)
     dropRow++;
   }
 
-  FilterPipeline::Pointer pipeline = getPipelineModel()->getPipelineContaining(index);
-  if(nullptr == pipeline)
-  {
-    PipelineModel* model = getPipelineModel();
-    model->appendPipeline("", FilterPipeline::New());
-    QModelIndex pipelineIndex = model->index(model->rowCount() - 1, 0);
-    pipeline = model->pipeline(pipelineIndex);
-    dropRow = 0;
-  }
-  
   const QMimeData* mimedata = event->mimeData();
   const PipelineFilterMimeData* filterData = dynamic_cast<const PipelineFilterMimeData*>(mimedata);
+  // Filters already in View
   if(filterData != nullptr)
   {
+    // Get pipeline
+    FilterPipeline::Pointer pipeline = getPipelineModel()->getPipelineContaining(index);
+    if(nullptr == pipeline)
+    {
+      PipelineModel* model = getPipelineModel();
+      model->appendPipeline("", FilterPipeline::New());
+      QModelIndex pipelineIndex = model->index(model->rowCount() - 1, 0);
+      pipeline = model->pipeline(pipelineIndex);
+      dropRow = 0;
+    }
+
     // This is filter data from an SVPipelineView instance
     std::vector<PipelineFilterMimeData::FilterDragMetadata> dragData = filterData->getFilterDragData();
 
@@ -1022,6 +1034,7 @@ void SVPipelineView::dropEvent(QDropEvent* event)
 
     event->accept();
   }
+  // Pipeline URL
   else if(mimedata->hasUrls())
   {
     QString data = mimedata->text();
@@ -1039,6 +1052,7 @@ void SVPipelineView::dropEvent(QDropEvent* event)
       event->ignore();
     }
   }
+  // Bookmark
   else if(mimedata->hasFormat(SIMPLView::DragAndDrop::BookmarkItem))
   {
     QByteArray jsonArray = mimedata->data(SIMPLView::DragAndDrop::BookmarkItem);
@@ -1065,6 +1079,7 @@ void SVPipelineView::dropEvent(QDropEvent* event)
       event->ignore();
     }
   }
+  // Filter List
   else if(mimedata->hasFormat(SIMPLView::DragAndDrop::FilterListItem))
   {
     QByteArray jsonArray = mimedata->data(SIMPLView::DragAndDrop::FilterListItem);
@@ -1085,6 +1100,17 @@ void SVPipelineView::dropEvent(QDropEvent* event)
     {
       event->ignore();
       return;
+    }
+
+    // Get pipeline
+    FilterPipeline::Pointer pipeline = getPipelineModel()->getPipelineContaining(index);
+    if(nullptr == pipeline)
+    {
+      PipelineModel* model = getPipelineModel();
+      model->appendPipeline("", FilterPipeline::New());
+      QModelIndex pipelineIndex = model->index(model->rowCount() - 1, 0);
+      pipeline = model->pipeline(pipelineIndex);
+      dropRow = 0;
     }
 
     AbstractFilter::Pointer filter = wf->create();
@@ -1181,7 +1207,7 @@ void SVPipelineView::toReadyState()
   for(int i = 0; i < model->rowCount(); i++)
   {
     QModelIndex index = model->index(i, AbstractPipelineItem::Contents);
-    
+
     // Do not set state to Completed if the filter is disabled
     FilterPipeline::FilterState wState = static_cast<FilterPipeline::FilterState>(model->data(index, PipelineModel::FilterStateRole).toInt());
     if(wState != FilterPipeline::FilterState::Disabled)
@@ -1255,7 +1281,7 @@ void SVPipelineView::toStoppedState()
 int SVPipelineView::openPipeline(const QString& filePath, int insertIndex)
 {
   m_CurrentPath = filePath;
-  //getPipelineModel()->openPipeline(filePath, insertIndex);
+  // getPipelineModel()->openPipeline(filePath, insertIndex);
 
   QFileInfo fi(filePath);
   if(fi.exists() == false)
@@ -1283,14 +1309,14 @@ int SVPipelineView::openPipeline(const QString& filePath, int insertIndex)
     {
       if(msgBox->isExtractPipelineBtnChecked() == false)
 #endif
-      {
-        FilterPipeline::Pointer pipeline = getPipelineModel()->createPipeline();
-        DataContainerReader::Pointer reader = DataContainerReader::New();
-        reader->setInputFile(filePath);
+    {
+      FilterPipeline::Pointer pipeline = getPipelineModel()->createPipeline();
+      DataContainerReader::Pointer reader = DataContainerReader::New();
+      reader->setInputFile(filePath);
 
-        addFilter(pipeline, reader, insertIndex);
-        return 1;
-      }
+      addFilter(pipeline, reader, insertIndex);
+      return 1;
+    }
     //}
   }
 
@@ -1435,7 +1461,6 @@ void SVPipelineView::requestFilterItemContextMenu(const QPoint& pos, const QMode
   menu.addAction(actionPasteBelow);
   menu.addSeparator();
 
-
   int count = selectedIndexes.size();
   bool widgetEnabled = true;
 
@@ -1554,9 +1579,7 @@ void SVPipelineView::requestPipelineItemContextMenu(const QPoint& pos, const QMo
 
   // Execute Pipeline
   QAction* actionExecutePipeline = new QAction("Execute Pipeline");
-  connect(actionExecutePipeline, &QAction::triggered, [this, index] {
-    getPipelineModel()->executePipeline(index);
-  });
+  connect(actionExecutePipeline, &QAction::triggered, [this, index] { getPipelineModel()->executePipeline(index); });
   menu.addAction(actionExecutePipeline);
   menu.addSeparator();
 
@@ -1568,9 +1591,7 @@ void SVPipelineView::requestPipelineItemContextMenu(const QPoint& pos, const QMo
 
   // Remove Pipeline
   QAction* actionRemovePipeline = new QAction("Delete Pipeline");
-  connect(actionRemovePipeline, &QAction::triggered, [this, index] {
-    getPipelineModel()->removePipeline(index.row());
-  });
+  connect(actionRemovePipeline, &QAction::triggered, [this, index] { getPipelineModel()->removePipeline(index.row()); });
   menu.addSeparator();
   menu.addAction(actionRemovePipeline);
 
@@ -1692,7 +1713,6 @@ void SVPipelineView::setModel(QAbstractItemModel* model)
   }
 
   QTreeView::setModel(model);
-
   PipelineModel* pipelineModel = dynamic_cast<PipelineModel*>(model);
 
   if(pipelineModel != nullptr)
@@ -1704,7 +1724,12 @@ void SVPipelineView::setModel(QAbstractItemModel* model)
     connect(pipelineModel, &PipelineModel::pipelineAdded, this, &SVPipelineView::expand);
   }
 
-  connect(selectionModel(), &QItemSelectionModel::selectionChanged, [=](const QItemSelection& selected, const QItemSelection& deselected) {
+  // Selection Mode / Model
+  setSelectionMode(SelectionMode::ExtendedSelection);
+  PipelineTreeViewSelectionModel* selectionModel = new PipelineTreeViewSelectionModel(pipelineModel);
+  setSelectionModel(selectionModel);
+
+  connect(selectionModel, &QItemSelectionModel::selectionChanged, [=](const QItemSelection& selected, const QItemSelection& deselected) {
     m_ActionCut->setEnabled(selected.size() > 0);
     m_ActionCopy->setEnabled(selected.size() > 0);
   });
@@ -1998,7 +2023,7 @@ QPixmap SVPipelineView::setPixmapColor(QPixmap pixmap, QColor pixmapColor)
 
       color.setAlpha(alpha);
 
-      if (color.isValid())
+      if(color.isValid())
       {
         image.setPixelColor(x, y, color);
       }

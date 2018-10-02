@@ -199,6 +199,14 @@ FilterPipeline::Pointer PipelineModel::getPipelineContaining(const QModelIndex& 
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+bool PipelineModel::containsPipeline(FilterPipeline::Pointer pipeline) const
+{
+  return m_RootItem->indexOf(pipeline) != -1;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 FilterPipeline::Pointer PipelineModel::lastPipeline() const
 {
   if(m_RootItem->childCount() == 0)
@@ -496,6 +504,7 @@ QModelIndex PipelineModel::index(int row, int column, const QModelIndex& parent)
 void PipelineModel::beginInsertingFilter(PipelineItem* item, int index)
 {
   QModelIndex pipelineIndex = itemIndex(item);
+  qDebug() << "Insert at index " << index << " of " << rowCount(pipelineIndex);
   beginInsertRows(pipelineIndex, index, index);
 }
 
@@ -519,6 +528,11 @@ bool PipelineModel::insertRows(int position, int rows, const QModelIndex& parent
   }
 
   AbstractPipelineItem* parentItem = getItem(parent);
+  if(dynamic_cast<PipelineItem*>(parentItem))
+  {
+    return true;
+  }
+
   bool success;
 
   beginInsertRows(parent, position, position + rows - 1);
@@ -793,7 +807,8 @@ void PipelineModel::connectPipelineItem(PipelineItem* item)
     beginRemovingFilter(item, index);
   });
 
-  connect(item, &PipelineItem::filterAdded, this, [=](int index) {
+  connect(item, &PipelineItem::filterAdded, this, [=](int index) { 
+    insertRows(index, 1, itemIndex(item));
     endInsertRows();
   });
 

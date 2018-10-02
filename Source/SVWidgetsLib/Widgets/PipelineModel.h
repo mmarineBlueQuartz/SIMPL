@@ -121,6 +121,13 @@ public:
    */
   FilterPipeline::Pointer getPipelineContaining(const QModelIndex& index) const;
 
+  /**
+   * @brief Returns true if the model contains the given pipeline.  Returns false otherwise.
+   * @param pipeline
+   * @return
+   */
+  bool containsPipeline(FilterPipeline::Pointer pipeline) const;
+
   FilterPipeline::Pointer lastPipeline() const;
 
   /**

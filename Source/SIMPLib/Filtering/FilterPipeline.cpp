@@ -347,6 +347,7 @@ bool FilterPipeline::pushFront(AbstractFilter::Pointer f)
 
   return true;
 }
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -365,6 +366,7 @@ bool FilterPipeline::popFront()
 
   return true;
 }
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -381,6 +383,7 @@ bool FilterPipeline::pushBack(AbstractFilter::Pointer f)
   emit filterAdded(m_Pipeline.size() - 1, f);
   return true;
 }
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -399,6 +402,7 @@ bool FilterPipeline::popBack()
   emit filterRemoved(index, f);
   return true;
 }
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -421,10 +425,11 @@ bool FilterPipeline::insert(size_t index, AbstractFilter::Pointer f)
   }
   emit beginAddingFilter(index);
   m_Pipeline.insert(it, f);
-  updatePrevNextFilters();
   emit filterAdded(index, f);
+  updatePrevNextFilters();
   return true;
 }
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -452,6 +457,7 @@ bool FilterPipeline::erase(size_t index)
   emit filterRemoved(index, f);
   return true;
 }
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -472,6 +478,7 @@ bool FilterPipeline::clear()
   emit pipelineCleared();
   return true;
 }
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -479,6 +486,7 @@ size_t FilterPipeline::size() const
 {
   return m_Pipeline.size();
 }
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -806,6 +814,7 @@ int FilterPipeline::preflightPipeline()
     }
   }
   setCurrentFilter(AbstractFilter::NullPointer());
+  emit preflightFinished();
 
   return preflightError;
 }

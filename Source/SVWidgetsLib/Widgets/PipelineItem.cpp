@@ -57,6 +57,7 @@ PipelineItem::PipelineItem(QString filePath, FilterPipeline::Pointer pipeline, P
   m_TempPipeline->setName(m_SavedPipeline->getName());
   updateFilterInputWidgets();
   connectPipeline();
+  m_TempPipeline->preflightPipeline();
 }
 
 // -----------------------------------------------------------------------------
@@ -134,6 +135,18 @@ void PipelineItem::connectPipeline()
   connect(m_TempPipeline.get(), &FilterPipeline::preflightStarted, this, &PipelineItem::clearIssues);
   connect(m_TempPipeline.get(), &FilterPipeline::pipelineStarted, this, &PipelineItem::clearIssues);
   //connect(m_TempPipeline.get(), &FilterPipeline::pipelineWasEdited, this, &PipelineItem::preflightPipeline);
+  connect(m_TempPipeline.get(), &FilterPipeline::preflightFinished, this, &PipelineItem::updateDataStructure);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PipelineItem::updateDataStructure()
+{
+  for(AbstractFilter::Pointer filter : (*m_TempPipeline))
+  {
+    m_FilterInputWidgets[filter]->getDataStructureWidget()->filterActivated(filter);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -416,7 +429,7 @@ int PipelineItem::childIndex() const
 // -----------------------------------------------------------------------------
 int PipelineItem::childCount() const
 {
-  return m_FilterItems.count();
+  return m_FilterItems.size();
 }
 
 // -----------------------------------------------------------------------------

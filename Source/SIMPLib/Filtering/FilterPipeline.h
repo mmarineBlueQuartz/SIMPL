@@ -258,6 +258,8 @@ signals:
 
   void preflightStarted();
 
+  void preflightFinished();
+
   /**
   * @brief This method is emitted from the pipeline and signals the pipeline has started execution
   */
@@ -315,6 +317,9 @@ signals:
    */
   void filterRemoved(int position, AbstractFilter::Pointer filter);
 
+  /**
+   * @brief this signal is emitted before clearing the pipeline
+   */
   void beginClearingPipeline();
 
   /**
