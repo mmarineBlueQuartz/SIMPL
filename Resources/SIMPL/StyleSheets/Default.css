@@ -168,6 +168,30 @@ QtSLineEdit#filterSearch
     min-height: 24;
 }
 
+
+
+DataPathLabel {
+    font-family: "Lato-Bold";
+    font-weight: bold;
+    font-size: Font_Size_Small;
+    /*background-color: DataPathLabel_color;*/
+    border-radius: 4px;
+}
+DataPathLabel:disabled {
+    background-color: DataPathLabel_Disabled_color;
+}
+DataPathLabel:enabled[DataTypei="0"] {
+    color: DataArrayPath_DataContainer_color;
+}
+DataPathLabel:enabled[DataTypei="1"] {
+    color: DataArrayPath_AttributeMatrix_color;
+}
+DataPathLabel:enabled[DataTypei="2"] {
+    color: DataArrayPath_DataArray_color;
+}
+
+
+
 /* ****************************************************************************
 *
 ******************************************************************************/
@@ -218,4 +242,3 @@ QwtLegendLabel
 {
     color: black;
 }
-

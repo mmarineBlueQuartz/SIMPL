@@ -74,11 +74,11 @@ void LinkedPathCreationWidget::setupGui()
     label->setText(getFilterParameter()->getHumanLabel());
 
     QString str = getFilter()->property(PROPERTY_NAME_AS_CHAR).toString();
-    stringEdit->setText(str, true);
+    dataArrayPathStringEdit->setText(str, true);
   }
   blockSignals(false);
 
-  stringEdit->hideButtons();
+  dataArrayPathStringEdit->hideButtons();
 
   // Catch when the filter is about to execute the preflight
   connect(getFilter(), SIGNAL(preflightAboutToExecute()), this, SLOT(beforePreflight()));
@@ -89,7 +89,7 @@ void LinkedPathCreationWidget::setupGui()
   // Catch when the filter wants its values updated
   connect(getFilter(), SIGNAL(updateFilterParameters(AbstractFilter*)), this, SLOT(filterNeedsInputParameters(AbstractFilter*)));
 
-  connect(stringEdit, SIGNAL(valueChanged(const QString&)), this, SIGNAL(parametersChanged()));
+  connect(dataArrayPathStringEdit, SIGNAL(valueChanged(const QString&)), this, SIGNAL(parametersChanged()));
 }
 
 // -----------------------------------------------------------------------------
@@ -134,7 +134,7 @@ int LinkedPathCreationWidget::getDataTypei() const
 // -----------------------------------------------------------------------------
 void LinkedPathCreationWidget::filterNeedsInputParameters(AbstractFilter* filter)
 {
-  bool ok = filter->setProperty(PROPERTY_NAME_AS_CHAR, stringEdit->getText());
+  bool ok = filter->setProperty(PROPERTY_NAME_AS_CHAR, dataArrayPathStringEdit->getText());
   if(!ok)
   {
     getFilter()->notifyMissingProperty(getFilterParameter());
