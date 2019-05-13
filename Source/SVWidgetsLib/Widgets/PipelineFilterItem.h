@@ -42,30 +42,28 @@
 
 #include "SVWidgetsLib/SVWidgetsLib.h"
 #include "SVWidgetsLib/Widgets/AbstractPipelineItem.h"
-#include "SVWidgetsLib/Widgets/PipelineRootItem.h"
+#include "SVWidgetsLib/Widgets/PipelineItem.h"
 
 class FilterInputWidget;
 
 /**
- * @class PipelineItem PipelineItem.h SVWidgets/Widgets/PipelineItem.h
- * @brief The PipelineItem class is derived from AbstractPipelineItem
- * in order to handle FilterPipeline data within PipelineModel.
+ * @class PipelineFilterItem PipelineFilterItem.h SVWidgetsLib/Widgets/PipelineFilterItem.h
+ * @brief The PipelineFilterItem is a a subclass of AbstractPipelineItem created
+ * for handling AbstractFilters within PipelineModel.
  */
-class SVWidgetsLib_EXPORT PipelineItem : public AbstractPipelineItem
+class SVWidgetsLib_EXPORT PipelineFilterItem : public AbstractPipelineItem
 {
 public:
-  PipelineItem(const QVector<QVariant>& data, PipelineRootItem* parent = nullptr);
-  virtual ~PipelineItem();
+  PipelineFilterItem(const QVector<QVariant>& data, PipelineFilterItem* parent = nullptr);
+  virtual ~PipelineFilterItem();
 
-  SIMPL_BOOL_PROPERTY(ActivePipeline)
-  SIMPL_BOOL_PROPERTY(PipelineSaved)
-  SIMPL_INSTANCE_PROPERTY(QIcon, Icon)
-  SIMPL_INSTANCE_PROPERTY(bool, Expanded)
+  SIMPL_POINTER_PROPERTY(FilterInputWidget, FilterInputWidget)
+  SIMPL_INSTANCE_PROPERTY(bool, FilterEnabled)
   SIMPL_INSTANCE_PROPERTY(QString, ItemTooltip)
 
   static const int MaxHeight = 28;
 
-  enum PipelineItemData
+  enum PipelineFilterItemData
   {
     Contents
   };
@@ -81,14 +79,6 @@ public:
   };
   SIMPL_INSTANCE_PROPERTY(WidgetState, WidgetState)
 
-  enum class PipelineState : EnumType
-  {
-    Running = 0,
-    Stopped = 1,
-    Paused = 4,
-  };
-  SIMPL_INSTANCE_PROPERTY(PipelineState, PipelineState)
-
   enum class ErrorState : EnumType
   {
     Ok = 0,
@@ -96,6 +86,15 @@ public:
     Warning = 2,
   };
   SIMPL_INSTANCE_PROPERTY(ErrorState, ErrorState)
+
+  //enum class ItemType : EnumType
+  //{
+  //  Pipeline,
+  //  Filter,
+  //  DropIndicator,
+  //  Unknown
+  //};
+  //SIMPL_INSTANCE_PROPERTY(ItemType, ItemType)
 
   AbstractPipelineItem* child(int number);
   AbstractPipelineItem* parent();
@@ -109,7 +108,7 @@ public:
   AbstractFilter::Pointer getFilter();
   void setFilter(AbstractFilter::Pointer filter);
 
-  bool insertChild(int position, PipelineItem* child);
+  bool insertChild(int position, PipelineFilterItem* child);
   bool insertChildren(int position, int count, int columns);
   bool insertColumns(int position, int columns);
 
@@ -119,18 +118,20 @@ public:
 
   int childNumber() const;
 
-  void setParent(AbstractPipelineItem* parent);
+  void setParent(PipelineFilterItem* parent);
 
   static QString TopLevelString();
 
 private:
-  QList<PipelineItem*> m_ChildItems;
   QVector<QVariant> m_ItemData;
+  AbstractFilter::Pointer m_Filter = nullptr;
   AbstractPipelineItem* m_ParentItem;
 
+  void setupFilterInputWidget();
+
 public:
-  PipelineItem(const PipelineItem&) = delete;            // Copy Constructor Not Implemented
-  PipelineItem(PipelineItem&&) = delete;                 // Move Constructor Not Implemented
-  PipelineItem& operator=(const PipelineItem&) = delete; // Copy Assignment Not Implemented
-  PipelineItem& operator=(PipelineItem&&) = delete;      // Move Assignment Not Implemented
+  PipelineFilterItem(const PipelineFilterItem&) = delete;            // Copy Constructor Not Implemented
+  PipelineFilterItem(PipelineFilterItem&&) = delete;                 // Move Constructor Not Implemented
+  PipelineFilterItem& operator=(const PipelineFilterItem&) = delete; // Copy Assignment Not Implemented
+  PipelineFilterItem& operator=(PipelineFilterItem&&) = delete;      // Move Assignment Not Implemented
 };

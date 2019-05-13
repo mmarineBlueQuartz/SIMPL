@@ -32,72 +32,28 @@
 #pragma once
 
 #include <QtCore/QList>
+#include <QtCore/QSize>
 #include <QtCore/QVariant>
 #include <QtCore/QVector>
 
-#include <QtGui/QIcon>
+//#include <QtGui/QIcon>
 
 #include "SIMPLib/Common/SIMPLibSetGetMacros.h"
-#include "SIMPLib/Filtering/AbstractFilter.h"
 
 #include "SVWidgetsLib/SVWidgetsLib.h"
-#include "SVWidgetsLib/Widgets/AbstractPipelineItem.h"
 #include "SVWidgetsLib/Widgets/PipelineRootItem.h"
 
 class FilterInputWidget;
 
-/**
- * @class PipelineItem PipelineItem.h SVWidgets/Widgets/PipelineItem.h
- * @brief The PipelineItem class is derived from AbstractPipelineItem
- * in order to handle FilterPipeline data within PipelineModel.
- */
-class SVWidgetsLib_EXPORT PipelineItem : public AbstractPipelineItem
+class SVWidgetsLib_EXPORT PipelineRootItem : public AbstractPipelineItem
 {
 public:
-  PipelineItem(const QVector<QVariant>& data, PipelineRootItem* parent = nullptr);
-  virtual ~PipelineItem();
-
-  SIMPL_BOOL_PROPERTY(ActivePipeline)
-  SIMPL_BOOL_PROPERTY(PipelineSaved)
-  SIMPL_INSTANCE_PROPERTY(QIcon, Icon)
-  SIMPL_INSTANCE_PROPERTY(bool, Expanded)
-  SIMPL_INSTANCE_PROPERTY(QString, ItemTooltip)
+  PipelineRootItem(const QVector<QVariant>& data);
+  virtual ~PipelineRootItem();
 
   static const int MaxHeight = 28;
 
-  enum PipelineItemData
-  {
-    Contents
-  };
-
-  using EnumType = unsigned int;
-
-  enum class WidgetState : EnumType
-  {
-    Ready = 0,     //!<
-    Executing = 1, //!<
-    Completed = 2, //!<
-    Disabled = 3
-  };
-  SIMPL_INSTANCE_PROPERTY(WidgetState, WidgetState)
-
-  enum class PipelineState : EnumType
-  {
-    Running = 0,
-    Stopped = 1,
-    Paused = 4,
-  };
-  SIMPL_INSTANCE_PROPERTY(PipelineState, PipelineState)
-
-  enum class ErrorState : EnumType
-  {
-    Ok = 0,
-    Error = 1,
-    Warning = 2,
-  };
-  SIMPL_INSTANCE_PROPERTY(ErrorState, ErrorState)
-
-  AbstractPipelineItem* child(int number);
+  PipelineItem* child(int number);
   AbstractPipelineItem* parent();
 
   int childCount() const;
@@ -106,10 +62,7 @@ public:
   QVariant data(int column) const;
   bool setData(int column, const QVariant& value);
 
-  AbstractFilter::Pointer getFilter();
-  void setFilter(AbstractFilter::Pointer filter);
-
-  bool insertChild(int position, PipelineItem* child);
+  bool insertChild(int position, PipelineRootItem* child);
   bool insertChildren(int position, int count, int columns);
   bool insertColumns(int position, int columns);
 
@@ -119,18 +72,17 @@ public:
 
   int childNumber() const;
 
-  void setParent(AbstractPipelineItem* parent);
-
   static QString TopLevelString();
 
 private:
-  QList<PipelineItem*> m_ChildItems;
-  QVector<QVariant> m_ItemData;
-  AbstractPipelineItem* m_ParentItem;
+  QList<PipelineRootItem*> m_ChildItems;
+  PipelineRootItem* m_ParentItem;
+
+  void setupFilterInputWidget();
 
 public:
-  PipelineItem(const PipelineItem&) = delete;            // Copy Constructor Not Implemented
-  PipelineItem(PipelineItem&&) = delete;                 // Move Constructor Not Implemented
-  PipelineItem& operator=(const PipelineItem&) = delete; // Copy Assignment Not Implemented
-  PipelineItem& operator=(PipelineItem&&) = delete;      // Move Assignment Not Implemented
+  PipelineRootItem(const PipelineRootItem&) = delete;            // Copy Constructor Not Implemented
+  PipelineRootItem(PipelineRootItem&&) = delete;                 // Move Constructor Not Implemented
+  PipelineRootItem& operator=(const PipelineRootItem&) = delete; // Copy Assignment Not Implemented
+  PipelineRootItem& operator=(PipelineRootItem&&) = delete;      // Move Assignment Not Implemented
 };

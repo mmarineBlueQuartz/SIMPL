@@ -50,12 +50,16 @@ set(SVWidgetsLib_Widgets_MOC_HDRS
 )
 
 set(SVWidgetsLib_Widgets_HDRS
+	${SVWidgetsLib_SOURCE_DIR}/Widgets/AbstractPipelineItem.h
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/BookmarksItem.h
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/DataStructureItem.h
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/ImportHDF5TreeModelItem.h
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/IssuesWidgetMessageHandler.h
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineFilterMimeData.h
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineItem.h
+  ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineDropItem.h
+  ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineFilterItem.h
+  ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineRootItem.h
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineView.h
 )
 
@@ -67,6 +71,7 @@ set(SVWidgetsLib_Widgets_SRCS
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/DataStructureModel.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/DataStructureProxyModel.cpp
 
+  ${SVWidgetsLib_SOURCE_DIR}/Widgets/AbstractPipelineItem.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/BookmarksItem.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/BookmarksItemDelegate.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/BookmarksModel.cpp
@@ -96,6 +101,9 @@ set(SVWidgetsLib_Widgets_SRCS
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineItemDelegate.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineModel.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineItem.cpp
+  ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineDropItem.cpp
+  ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineFilterItem.cpp
+  ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineRootItem.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/PipelineView.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/StatusBarWidget.cpp
   ${SVWidgetsLib_SOURCE_DIR}/Widgets/StatusBarButton.cpp

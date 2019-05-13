@@ -32,46 +32,58 @@
 #pragma once
 
 #include <QtCore/QList>
+#include <QtCore/QSize>
 #include <QtCore/QVariant>
 #include <QtCore/QVector>
 
-#include <QtGui/QIcon>
+//#include <QtGui/QIcon>
 
 #include "SIMPLib/Common/SIMPLibSetGetMacros.h"
-#include "SIMPLib/Filtering/AbstractFilter.h"
 
 #include "SVWidgetsLib/SVWidgetsLib.h"
-#include "SVWidgetsLib/Widgets/AbstractPipelineItem.h"
-#include "SVWidgetsLib/Widgets/PipelineRootItem.h"
 
 class FilterInputWidget;
 
-/**
- * @class PipelineItem PipelineItem.h SVWidgets/Widgets/PipelineItem.h
- * @brief The PipelineItem class is derived from AbstractPipelineItem
- * in order to handle FilterPipeline data within PipelineModel.
- */
-class SVWidgetsLib_EXPORT PipelineItem : public AbstractPipelineItem
+class SVWidgetsLib_EXPORT AbstractPipelineItem
 {
 public:
-  PipelineItem(const QVector<QVariant>& data, PipelineRootItem* parent = nullptr);
-  virtual ~PipelineItem();
+  AbstractPipelineItem(const QVector<QVariant>& data, AbstractPipelineItem* parent = nullptr);
+  virtual ~AbstractPipelineItem();
 
-  SIMPL_BOOL_PROPERTY(ActivePipeline)
-  SIMPL_BOOL_PROPERTY(PipelineSaved)
-  SIMPL_INSTANCE_PROPERTY(QIcon, Icon)
-  SIMPL_INSTANCE_PROPERTY(bool, Expanded)
-  SIMPL_INSTANCE_PROPERTY(QString, ItemTooltip)
+  //SIMPL_POINTER_PROPERTY(FilterInputWidget, FilterInputWidget)
+  //SIMPL_INSTANCE_PROPERTY(bool, FilterEnabled)
+  //SIMPL_BOOL_PROPERTY(ActivePipeline)
+  //SIMPL_BOOL_PROPERTY(PipelineSaved)
+  //SIMPL_INSTANCE_PROPERTY(QIcon, Icon)
+  //SIMPL_INSTANCE_PROPERTY(bool, Expanded)
+  //SIMPL_INSTANCE_PROPERTY(QString, ItemTooltip)
+  //SIMPL_INSTANCE_PROPERTY(QString, DropIndicatorText)
+  SIMPL_INSTANCE_PROPERTY(int, BorderSize)
+  SIMPL_INSTANCE_PROPERTY(QSize, Size)
+  SIMPL_INSTANCE_PROPERTY(int, Height)
+  SIMPL_INSTANCE_PROPERTY(int, Width)
+  SIMPL_INSTANCE_PROPERTY(int, XOffset)
+  SIMPL_INSTANCE_PROPERTY(int, YOffset)
 
   static const int MaxHeight = 28;
 
-  enum PipelineItemData
+  enum AnimationType
+  {
+    None,
+    Add,
+    Remove
+  };
+
+  SIMPL_INSTANCE_PROPERTY(AnimationType, CurrentAnimationType)
+
+  enum AbstractPipelineItemData
   {
     Contents
   };
 
   using EnumType = unsigned int;
 
+#if 0
   enum class WidgetState : EnumType
   {
     Ready = 0,     //!<
@@ -96,41 +108,36 @@ public:
     Warning = 2,
   };
   SIMPL_INSTANCE_PROPERTY(ErrorState, ErrorState)
+#endif
 
-  AbstractPipelineItem* child(int number);
-  AbstractPipelineItem* parent();
 
-  int childCount() const;
-  int columnCount() const;
+  virtual AbstractPipelineItem* child(int number) = 0;
+  virtual AbstractPipelineItem* parent() = 0;
 
-  QVariant data(int column) const;
-  bool setData(int column, const QVariant& value);
+  virtual int childCount() const = 0;
+  virtual int columnCount() const = 0;
 
-  AbstractFilter::Pointer getFilter();
-  void setFilter(AbstractFilter::Pointer filter);
+  virtual QVariant data(int column) const = 0;
+  virtual bool setData(int column, const QVariant& value) = 0;
 
-  bool insertChild(int position, PipelineItem* child);
-  bool insertChildren(int position, int count, int columns);
-  bool insertColumns(int position, int columns);
+  virtual bool insertChild(int position, AbstractPipelineItem* child) = 0;
+  virtual bool insertChildren(int position, int count, int columns) = 0;
 
-  bool removeChild(int position);
-  bool removeChildren(int position, int count);
-  bool removeColumns(int position, int columns);
+  virtual bool removeChild(int position) = 0;
+  virtual bool removeChildren(int position, int count) = 0;
 
-  int childNumber() const;
+  virtual int childNumber() const = 0;
 
-  void setParent(AbstractPipelineItem* parent);
+  virtual void setParent(AbstractPipelineItem* parent);
 
   static QString TopLevelString();
 
 private:
-  QList<PipelineItem*> m_ChildItems;
-  QVector<QVariant> m_ItemData;
   AbstractPipelineItem* m_ParentItem;
 
 public:
-  PipelineItem(const PipelineItem&) = delete;            // Copy Constructor Not Implemented
-  PipelineItem(PipelineItem&&) = delete;                 // Move Constructor Not Implemented
-  PipelineItem& operator=(const PipelineItem&) = delete; // Copy Assignment Not Implemented
-  PipelineItem& operator=(PipelineItem&&) = delete;      // Move Assignment Not Implemented
+  AbstractPipelineItem(const AbstractPipelineItem&) = delete;            // Copy Constructor Not Implemented
+  AbstractPipelineItem(AbstractPipelineItem&&) = delete;                 // Move Constructor Not Implemented
+  AbstractPipelineItem& operator=(const AbstractPipelineItem&) = delete; // Copy Assignment Not Implemented
+  AbstractPipelineItem& operator=(AbstractPipelineItem&&) = delete;      // Move Assignment Not Implemented
 };
