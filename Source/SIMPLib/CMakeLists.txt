@@ -173,7 +173,7 @@ cmpReplaceFileIfDifferent(OLD_FILE_PATH  ${SIMPLib_BINARY_DIR}/CoreFilters/Regis
                           NEW_FILE_PATH  ${RegisterKnownFiltersFile} )
 
 
-set(${PROJECT_NAME}_LINK_LIBS Qt5::Core Qt5::Network H5Support)
+# set(${PROJECT_NAME}_LINK_LIBS Qt5::Core Qt5::Network H5Support)
 if( "${SIMPL_USE_MULTITHREADED_ALGOS}" STREQUAL "ON")
   list(APPEND ${PROJECT_NAME}_LINK_LIBS TBB::tbb TBB::tbbmalloc)
 endif()
@@ -214,7 +214,7 @@ if(SIMPL_USE_EIGEN)
 )
 endif()
 
-CMP_MODULE_INCLUDE_DIRS (TARGET ${PROJECT_NAME} LIBVARS HDF5 Qt5Core Qt5Network)
+CMP_MODULE_INCLUDE_DIRS (TARGET ${PROJECT_NAME} LIBVARS HDF5)
 
 if(SIMPL_Group_BASE)
   foreach(SIMPLIB_SUB_DIR ${SIMPL_Group_BASE_MODULES})
@@ -258,7 +258,7 @@ endif()
 if(SIMPL_Group_REST)
   target_include_directories(${PROJECT_NAME} PUBLIC 
                                 $<BUILD_INTERFACE:${SIMPLProj_SOURCE_DIR}/ThirdParty>)
-  target_link_libraries(${PROJECT_NAME} QtWebAppLib)                            
+  # target_link_libraries(${PROJECT_NAME} QtWebAppLib)                            
 endif()
 
 #-- Configure Link Libraries for the Target

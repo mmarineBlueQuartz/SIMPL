@@ -231,10 +231,10 @@ SIMPL_ENABLE_GROUP(GROUP_NAME REST
             ENABLE ON
             DESC "Compile SIMPL REST functionality"
             DEPENDENCIES BASE)
-SIMPL_ENABLE_GROUP(GROUP_NAME WIDGETS
-            ENABLE ON
-            DESC "Compile SIMPL Qt Widgets functionality"
-            DEPENDENCIES BASE FILTERS PLUGIN)
+# SIMPL_ENABLE_GROUP(GROUP_NAME WIDGETS
+#             ENABLE ON
+#             DESC "Compile SIMPL Qt Widgets functionality"
+#             DEPENDENCIES BASE FILTERS PLUGIN)
 
 OPTION(SIMPL_BUILD_TESTING "Compile the test programs" ON)
 
@@ -270,13 +270,13 @@ endif()
 
 # --------------------------------------------------------------------
 # Find and Use the Qt5 Libraries
-include(${CMP_SOURCE_DIR}/ExtLib/Qt5Support.cmake)
-set(SIMPL_Qt5_COMPONENTS Core Network)
-if( SIMPL_Group_WIDGETS)
-  set(SIMPL_Qt5_COMPONENTS Core Widgets Network Gui Concurrent Svg Xml OpenGL PrintSupport)
-endif()
-set(USE_QtWebEngine FALSE)
-CMP_AddQt5Support( "${SIMPL_Qt5_COMPONENTS}" "${USE_QtWebEngine}" "${SIMPLProj_BINARY_DIR}" "SIMPL")
+# include(${CMP_SOURCE_DIR}/ExtLib/Qt5Support.cmake)
+# set(SIMPL_Qt5_COMPONENTS Core Network)
+# if( SIMPL_Group_WIDGETS)
+#   set(SIMPL_Qt5_COMPONENTS Core Widgets Network Gui Concurrent Svg Xml OpenGL PrintSupport)
+# endif()
+# set(USE_QtWebEngine FALSE)
+# CMP_AddQt5Support( "${SIMPL_Qt5_COMPONENTS}" "${USE_QtWebEngine}" "${SIMPLProj_BINARY_DIR}" "SIMPL")
 
 # --------------------------------------------------------------------
 # Should we use enable NTFS file checking on Windows
@@ -384,7 +384,7 @@ add_subdirectory( ${SIMPLProj_SOURCE_DIR}/Source/H5Support ${PROJECT_BINARY_DIR}
 # -----------------------------------------------------------------------
 # Add in the support to host the documentation over a thin-http server
 # -----------------------------------------------------------------------
-add_subdirectory(${SIMPLProj_SOURCE_DIR}/ThirdParty/QtWebApp )
+# add_subdirectory(${SIMPLProj_SOURCE_DIR}/ThirdParty/QtWebApp )
 
 # -----------------------------------------------------------------------
 # This needs to be set here as we are going to look for files in this directory

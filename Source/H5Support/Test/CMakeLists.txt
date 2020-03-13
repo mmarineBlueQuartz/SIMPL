@@ -76,7 +76,7 @@ AddSIMPLUnitTest(TESTNAME H5SupportUnitTest
   FOLDER 
     "H5SupportProj/Test"
   LINK_LIBRARIES 
-    Qt5::Core 
+    # Qt5::Core 
     H5Support 
     SIMPLib
   INCLUDE_DIRS 

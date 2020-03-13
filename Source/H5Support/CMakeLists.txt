@@ -84,13 +84,15 @@ INCLUDE (${CMP_SOURCE_DIR}/cmpProject.cmake)
 #-------------------------------------------------------------------------------
 # Set our H5Lite codes to also compile the Qt API version of H5Lite
 #-------------------------------------------------------------------------------
-set(H5Support_USE_QT 0)
-option(H5Support_INCLUDE_QT_API "Include support for using Qt classes with H5Lite" ON)
-if(H5Support_INCLUDE_QT_API)
-  set(H5Support_USE_QT 1)
-endif()
-MARK_AS_ADVANCED(H5Support_INCLUDE_QT_API)
-MARK_AS_ADVANCED(H5Support_USE_QT)
+# set(H5Support_USE_QT 0)
+# option(H5Support_INCLUDE_QT_API "Include support for using Qt classes with H5Lite" ON)
+# if(H5Support_INCLUDE_QT_API)
+#   set(H5Support_USE_QT 1)
+# else()
+#   set(H5Support_USE_QT 0)
+# endif()
+# MARK_AS_ADVANCED(H5Support_INCLUDE_QT_API)
+# MARK_AS_ADVANCED(H5Support_USE_QT)
 
 set(H5Support_SRCS
     ${H5Support_SOURCE_DIR}/H5Lite.cpp
@@ -108,18 +110,18 @@ set(H5Support_HDRS
     ${H5Support_SOURCE_DIR}/H5SupportDLLExport.h
 )
 
-if(H5Support_USE_QT)
-  set(H5Support_SRCS
-    ${H5Support_SRCS}
-    ${H5Support_SOURCE_DIR}/QH5Lite.cpp
-    ${H5Support_SOURCE_DIR}/QH5Utilities.cpp
-  )
-  set(H5Support_HDRS
-    ${H5Support_HDRS}
-    ${H5Support_SOURCE_DIR}/QH5Lite.h
-    ${H5Support_SOURCE_DIR}/QH5Utilities.h
-  )
-endif()
+# if(H5Support_USE_QT)
+#   set(H5Support_SRCS
+#     ${H5Support_SRCS}
+#     ${H5Support_SOURCE_DIR}/QH5Lite.cpp
+#     ${H5Support_SOURCE_DIR}/QH5Utilities.cpp
+#   )
+#   set(H5Support_HDRS
+#     ${H5Support_HDRS}
+#     ${H5Support_SOURCE_DIR}/QH5Lite.h
+#     ${H5Support_SOURCE_DIR}/QH5Utilities.h
+#   )
+# endif()
 
 
 #---------------------------------
@@ -156,7 +158,7 @@ set(PROJECT_SRCS
 add_library(${PROJECT_NAME} ${LIB_TYPE} ${PROJECT_SRCS})
 CMP_AddDefinitions(TARGET ${PROJECT_NAME})
 LibraryProperties( ${PROJECT_NAME}  ${EXE_DEBUG_EXTENSION} )
-CMP_MODULE_INCLUDE_DIRS (TARGET ${PROJECT_NAME} LIBVARS HDF5 Qt5Core)
+CMP_MODULE_INCLUDE_DIRS (TARGET ${PROJECT_NAME} LIBVARS HDF5)
 
 get_filename_component(TARGET_BINARY_DIR_PARENT ${H5Support_BINARY_DIR} PATH)
 get_filename_component(TARGET_SOURCE_DIR_PARENT ${H5Support_SOURCE_DIR} PATH)
@@ -173,7 +175,7 @@ if(BUILD_SHARED_LIBS)
     target_compile_definitions(${PROJECT_NAME} PUBLIC "-DH5Support_BUILT_AS_DYNAMIC_LIB")
   endif(WIN32)
 endif(BUILD_SHARED_LIBS)
-target_link_libraries(${PROJECT_NAME} ${HDF5_C_TARGET_NAME} Qt5::Core )
+target_link_libraries(${PROJECT_NAME} ${HDF5_C_TARGET_NAME})
 
 
 set(install_dir "bin")

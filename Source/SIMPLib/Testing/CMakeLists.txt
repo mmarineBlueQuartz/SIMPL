@@ -14,8 +14,8 @@ set(TESTFILES_SRC_DIR ${SIMPLTest_SOURCE_DIR}/TestFiles)
 file(MAKE_DIRECTORY ${TEST_TEMP_DIR})
 
 
-get_target_property(QtQMake_location Qt5::qmake LOCATION)
-execute_process(COMMAND "${QtQMake_location}" -query QMAKE_VERSION OUTPUT_VARIABLE QMAKE_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+# get_target_property(QtQMake_location Qt5::qmake LOCATION)
+# execute_process(COMMAND "${QtQMake_location}" -query QMAKE_VERSION OUTPUT_VARIABLE QMAKE_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 
 configure_file(${SIMPLTest_SOURCE_DIR}/TestFileLocations.h.in
@@ -31,8 +31,8 @@ configure_file(${SIMPLProj_SOURCE_DIR}/Resources/UnitTestSupport.hpp
 STRING(REPLACE "|" ";" TestMainFunctors "${SIMPLib_UnitTest_MainFunctors}")
 set(FilterTestIncludes  "${SIMPLib_UnitTest_Includes}")
 
-set(QT_APPLICATION_CLASS_HEADER "#include <QtCore/QCoreApplication>")
-set(QT_APPLICATION_CLASS "QCoreApplication")
+# set(QT_APPLICATION_CLASS_HEADER "#include <QtCore/QCoreApplication>")
+# set(QT_APPLICATION_CLASS "QCoreApplication")
 
 configure_file(${SIMPLTest_SOURCE_DIR}/TestMain.cpp.in
           ${SIMPLTest_BINARY_DIR}/SIMPLUnitTest.cpp @ONLY)
@@ -43,7 +43,7 @@ foreach(f ${${SIMPL_UNIT_TEST}_TEST_SRCS})
 endforeach()
 
 set(LINKED_LIBRARIES
-  Qt5::Core
+  # Qt5::Core
   H5Support
   SIMPLib
   ${ITK_LIBRARIES}
